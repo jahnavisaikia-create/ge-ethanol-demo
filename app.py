@@ -56,7 +56,6 @@ st.markdown("""
     .pipeline-step-header { font-size: 1.05rem; font-weight: 700; color: #1e293b; margin-bottom: 0.5rem; display: flex; align-items: center; }
     .pipeline-step-body { font-size: 0.95rem; color: #475569; line-height: 1.6; text-align: justify; }
     
-    /* Forces absolute form alignment symmetry */
     div[data-testid="stForm"] {
         border: 1px solid #e2e8f0 !important;
         padding: 2rem !important;
@@ -94,6 +93,7 @@ page = st.sidebar.radio(
     [
         "🏠 Home / Workflow Overview",
         "🗺️ Geospatial Intelligence Map",
+        "📊 Global Portfolio Analytics",  # Added 6th View Page
         "🔍 Automated Research & Extraction Hub",
         "🖥️ Human-in-the-Loop Review Queue",
         "🔔 Maintenance Alerts & Lifecycle"
@@ -165,7 +165,7 @@ if page == "🏠 Home / Workflow Overview":
         st.plotly_chart(fig, use_container_width=True)
 
 # ==========================================
-# PAGE 2: GEOSPATIAL INTELLIGENCE MAP (ZERO-FAIL BROWSER-RENDERED OPEN STREET MAPS)
+# PAGE 2: GEOSPATIAL INTELLIGENCE MAP
 # ==========================================
 elif page == "🗺️ Geospatial Intelligence Map":
     render_executive_panel("Geospatial Intelligence Engine Map", "Phase 1 High-Density Production Asset Clusters Location Mapping")
@@ -174,49 +174,53 @@ elif page == "🗺️ Geospatial Intelligence Map":
     if map_df.empty:
         st.warning("No validated records currently present in production data structures. Route to the HITL Queue to commit entries.")
     else:
-        # Create a clean data-info string column for the interactive hover block card
         map_df["Hover Details"] = (
             "🏭 Plant: " + map_df["Plant Name"] + "<br>" +
             "🏢 Company: " + map_df["Company"] + "<br>" +
-            "⚡ Capacity: " + map_df["Capacity"].astype(str) + " M Liters/Yr<br>" +
-            "📍 Lat/Lon: " + map_df["lat"].astype(str) + ", " + map_df["lon"].astype(str)
+            "⚡ Capacity: " + map_df["Capacity"].astype(str) + " M Liters/Yr"
         )
         
-        # 🟢 FIX: Plotly Express map layer. It renders locally inside the browser with colored statuses
-        # and interactive custom hover cards, completely bypassing all token-based white screen bugs.
         fig_map = px.scatter_mapbox(
-            map_df,
-            lat="lat",
-            lon="lon",
-            color="Status",
-            size="Capacity",
-            size_max=35,
-            color_discrete_map={
-                "Operating": "#2ecc71",               # Symmetrical Emerald Green
-                "Closed": "#e74c3c",                  # Symmetrical Aligned Crimson Red
-                "Capacity Expanded (+15%)": "#f1c40f" # Symmetrical Amber Yellow
-            },
-            hover_name="Plant Name",
-            hover_data={"lat": False, "lon": False, "Status": True, "Capacity": False, "Hover Details": True},
+            map_df, lat="lat", lon="lon", color="Status", size="Capacity", size_max=35,
+            color_discrete_map={"Operating": "#2ecc71", "Closed": "#e74c3c", "Capacity Expanded (+15%)": "#f1c40f"},
+            hover_name="Plant Name", hover_data={"lat": False, "lon": False, "Status": True, "Capacity": False, "Hover Details": True},
             zoom=4.2
         )
-        
-        # Configure layout to use zero-fail, open-source terrain styles
-        fig_map.update_layout(
-            mapbox_style="open-street-map",
-            margin=dict(r=0, t=0, l=0, b=0),
-            height=500,
-            showlegend=True
-        )
-        
+        fig_map.update_layout(mapbox_style="open-street-map", margin=dict(r=0, t=0, l=0, b=0), height=500, showlegend=True)
         st.plotly_chart(fig_map, use_container_width=True)
-        st.markdown("💡 *Spatial Mapping Legend: **Green Bubbles** = Verified Operating | **Yellow Bubbles** = Expansion/Planned | **Red Bubbles** = Closed (Circle size matches annual production volumes).*")
         
         st.markdown('<div class="section-title">Active Master Production Registry</div>', unsafe_allow_html=True)
         st.dataframe(map_df[["Plant Name", "Company", "Parent Group", "State", "Status", "Capacity", "Feedstock", "Verification Date"]], use_container_width=True)
 
 # ==========================================
-# PAGE 3: AUTOMATED RESEARCH HUB
+# NEW PAGE 3: GLOBAL PORTFOLIO ANALYTICS (EXECUTIVE MACRO-INTELLIGENCE)
+# ==========================================
+elif page == "📊 Global Portfolio Analytics":
+    render_executive_panel("Global Portfolio Analytics Dashboard", "Strategic Macro Intelligence Metrics & Aggregated Field Insights")
+    
+    # Compile complete combined database profile dynamically
+    all_assets_df = pd.concat([st.session_state.production_db, pd.DataFrame(st.session_state.pending_queue)], ignore_index=True)
+    
+    col_chart1, col_chart2 = st.columns(2)
+    
+    with col_chart1:
+        st.markdown('<div class="section-title">Production Capacity Distribution by Operating Entity</div>', unsafe_allow_html=True)
+        fig_company = px.bar(all_assets_df, x="Company", y="Capacity", color="Status", title="Capacity Share (Million Liters/Year)", color_discrete_sequence=px.colors.qualitative.Dark2)
+        st.plotly_chart(fig_company, use_container_width=True)
+        
+    with col_chart2:
+        st.markdown('<div class="section-title">Feedstock Biomass Market Share</div>', unsafe_allow_html=True)
+        fig_pie = px.pie(all_assets_df, names="Feedstock", values="Capacity", title="Asset Resource Breakdown Matrix", hole=0.4)
+        st.plotly_chart(fig_pie, use_container_width=True)
+        
+    st.markdown('---')
+    st.markdown('<div class="section-title">Asset Horizon Tracking Constraints Checklist (2003 - 2026 Timeline)</div>', unsafe_allow_html=True)
+    fig_trend = px.scatter(all_assets_df, x="Start Year", y="Capacity", size="Capacity", color="Status", hover_name="Plant Name", title="Asset Inception Matrix Filters Validation Loop View")
+    fig_trend.update_layout(xaxis_range=[2002, 2027])
+    st.plotly_chart(fig_trend, use_container_width=True)
+
+# ==========================================
+# PAGE 4: AUTOMATED RESEARCH HUB
 # ==========================================
 elif page == "🔍 Automated Research & Extraction Hub":
     render_executive_panel("Automated AI Discovery & NLP Extraction Center", "Machine Learning Web Scraping Processing Interfaces & Raw Telemetry Output")
@@ -242,7 +246,6 @@ elif page == "🔍 Automated Research & Extraction Hub":
                 st.write("Payload located via RSS Match ID #81023. Running unstructured text NLP mapping rules... OK")
                 time.sleep(0.4)
                 status.update(label="Scraping cycle successfully completed! Record transferred to staging.", state="complete", expanded=True)
-            
             st.code("NLP Entity Resolution Match Output:\n -> Plant: Unid. Gasa\n -> Mapped Metric Fields: 33/33 Attributes Found\n -> Core Parsing Engine Confidence Scale: 94.2%")
         else:
             st.info("System Engine idling. Execute 'Launch Extraction Sequence Pipeline' to begin processing live web scrapers.")
@@ -256,14 +259,14 @@ elif page == "🔍 Automated Research & Extraction Hub":
         st.dataframe(pending_df[["Plant Name", "Company", "Source", "Confidence", "Status", "Capacity", "ExtractDate"]], use_container_width=True)
 
 # ==========================================
-# PAGE 4: HUMAN-IN-THE-LOOP (HITL) QUEUE (FIXED SYMMETRICAL DATA INPUT FORM)
+# PAGE 5: HUMAN-IN-THE-LOOP (HITL) QUEUE
 # ==========================================
 elif page == "🖥️ Human-in-the-Loop Review Queue":
     render_executive_panel("Human-In-The-Loop Data Verification Interface", "100% Data Fidelity Verification Environment for Senior Corporate Leadership Validation")
     
     if len(st.session_state.pending_queue) == 0:
         st.balloons()
-        st.success("🎉 **Validation Queue Completely Clear!** All discovered industrial assets are safely locked to production databases and active across the interactive map layouts.")
+        st.success("🎉 **Validation Queue Completely Clear!** All discovered industrial assets are safely logged to production layouts.")
     else:
         current_target = st.session_state.pending_queue[0]
         st.warning(f"👉 **Awaiting Action:** Evaluating Extraction Target Record **1 of {len(st.session_state.pending_queue)}**: **{current_target['Plant Name']}** (AI Engine Match Confidence Scale: {current_target['Confidence']}%)")
@@ -271,23 +274,15 @@ elif page == "🖥️ Human-in-the-Loop Review Queue":
         left_pane, right_pane = st.columns([2, 3])
         with left_pane:
             st.markdown('<div class="section-title">Original Source Text Fragment</div>', unsafe_allow_html=True)
-            st.info(f"""
-            **Document Excerpt Source Reference ({current_target['Source']}):**
-            
-            "The corporate engineering registries for cluster assets detail significant structural expansions. The operating management firm, {current_target['Company']}, has approved capital project layouts. Historical metrics verify an immediate modification to spatial design criteria, increasing active nameplate production capacity metrics to achieve an effective annual baseline yield capability of {current_target['Capacity']} Million Liters per annum..."
-            """)
+            st.info(f"""**Document Excerpt Source Reference ({current_target['Source']}):** "{st.session_state.pending_queue[0]['Company']}'s infrastructure details logged major expansions. The operating management firm has approved capital layouts. Metrics confirm an immediate modification to spatial design criteria, increasing active nameplate production capacity metrics to achieve an effective annual baseline yield capability of {current_target['Capacity']} Million Liters per annum..." """)
             st.caption("Primary Reference Source Track URL String: https://www.bloomberg.com/news/articles/brazil-biofuel-expansion-raizen")
             
             st.markdown('<div class="section-title">Capacity Verification Methodology Standard Logic</div>', unsafe_allow_html=True)
             st.latex(r"Capacity_{Effective} = Capacity_{Design} \times \text{Energy Density Scale Factor}")
-            st.caption("Standard Technical Logic Applied: Volumetric Conversion SOP Baseline Rule v1.2")
             
         with right_pane:
             st.markdown('<div class="section-title">Verified Enterprise Data Field Form</div>', unsafe_allow_html=True)
-            
-            # 🟢 FIX: Form variables re-aligned with matching layout parameters to lock column symmetry completely
             with st.form("hitl_interactive_form"):
-                
                 st.markdown("##### 📋 Core Asset Profile & Identification")
                 f_col1, f_col2 = st.columns(2)
                 with f_col1:
@@ -317,26 +312,15 @@ elif page == "🖥️ Human-in-the-Loop Review Queue":
                 
                 st.markdown("<br>", unsafe_allow_html=True)
                 submit_verification = st.form_submit_button("Commit Checked Attributes to Master Database Schema", use_container_width=True)
-                
                 if submit_verification:
                     validated_record = {
-                        "Plant Name": form_name,
-                        "Company": form_company,
-                        "Parent Group": form_parent,
-                        "State": form_state,
-                        "City": form_city,
-                        "lat": float(form_lat),
-                        "lon": float(form_lon),
-                        "Status": form_status,
-                        "Capacity": int(form_capacity),
-                        "Feedstock": form_feedstock,
-                        "Start Year": int(form_year),
-                        "Verification Date": datetime.now().strftime("%Y-%m-%d")
+                        "Plant Name": form_name, "Company": form_company, "Parent Group": form_parent, "State": form_state, "City": form_city,
+                        "lat": float(form_lat), "lon": float(form_lon), "Status": form_status, "Capacity": int(form_capacity),
+                        "Feedstock": form_feedstock, "Start Year": int(form_year), "Verification Date": datetime.now().strftime("%Y-%m-%d")
                     }
-                    
                     st.session_state.production_db = pd.concat([st.session_state.production_db, pd.DataFrame([validated_record])], ignore_index=True)
                     st.session_state.pending_queue.pop(0)
-                    st.success(f"Log asset system record '{form_name}' successfully committed to production database layouts.")
+                    st.success("Log asset system record successfully committed.")
                     time.sleep(0.5)
                     st.rerun()
 
@@ -345,11 +329,10 @@ elif page == "🖥️ Human-in-the-Loop Review Queue":
     timestamp_export = datetime.now().strftime("%Y%m%d_%H%M")
     export_filename_string = f"Brazil_{len(st.session_state.production_db)}_Projects_{timestamp_export}_FinalReport.csv"
     csv_payload = st.session_state.production_db[["Plant Name", "Company", "Parent Group", "State", "Status", "Capacity", "Feedstock", "Verification Date"]].to_csv(index=False)
-    
     st.download_button(label="Download Processed Delivery Matrix Spreadsheet (.CSV Document Target)", data=csv_payload, file_name=export_filename_string, mime="text/csv")
 
 # ==========================================
-# PAGE 5: MAINTENANCE & LIFECYCLE ALERTS
+# PAGE 6: MAINTENANCE & LIFECYCLE ALERTS
 # ==========================================
 elif page == "🔔 Maintenance Alerts & Lifecycle":
     render_executive_panel("Continuous Baseline Asset Lifecycle Maintenance Engine", "Dynamic Asset Configuration Monitoring & Delta Tracking Anomalies Notifications")
