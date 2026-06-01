@@ -4,23 +4,33 @@ import numpy as np
 import plotly.express as px
 import pydeck as pdk
 from datetime import datetime
+import time
 
-# Set up browser tab title and wide executive layout
+# Executive Configuration Layout
 st.set_page_config(page_title="GE Global Ethanol Intelligence Dashboard", layout="wide")
 
-# --- MOCK DATA GENERATION (Brazil Focus for Phase 1) ---
-@st.cache_data
-def load_mock_data():
-    plants = [
+# ==========================================
+# CENTRAL PRODUCTION DATABASE (STREAMLIT SESSION STATE)
+# ==========================================
+# Initialize shared memory so all pages react to user actions dynamically
+if "production_db" not in st.session_state:
+    st.session_state.production_db = pd.DataFrame([
         {"Plant Name": "Unid. Barra", "Company": "Raízen", "Parent Group": "Cosan & Shell", "State": "São Paulo", "City": "Barra Bonita", "Lat": -22.4042, "Lon": -48.5564, "Status": "Operating", "Capacity": 180, "Feedstock": "Sugarcane Bagasse", "Start Year": 2004},
         {"Plant Name": "Unid. Maracaí", "Company": "Raízen", "Parent Group": "Cosan & Shell", "State": "São Paulo", "City": "Maracaí", "Lat": -22.6124, "Lon": -50.6345, "Status": "Operating", "Capacity": 120, "Feedstock": "Sugarcane Bagasse", "Start Year": 2008},
-        {"Plant Name": "Unid. Gasa", "Company": "Raízen", "Parent Group": "Cosan & Shell", "State": "São Paulo", "City": "Andradina", "Lat": -20.8961, "Lon": -51.3794, "Status": "Capacity Expanded (+15%)", "Capacity": 95, "Feedstock": "Sugarcane Bagasse", "Start Year": 2003},
-        {"Plant Name": "Sinop Biofuel Plant", "Company": "Inpasa", "Parent Group": "Inpasa Brasil", "State": "Mato Grosso", "City": "Sinop", "Lat": -11.8541, "Lon": -55.5085, "Status": "Planned/Under Construction", "Capacity": 400, "Feedstock": "Corn", "Start Year": 2026},
         {"Plant Name": "Boa Vista Biorefinery", "Company": "São Martinho", "Parent Group": "São Martinho Group", "State": "Goiás", "City": "Quirinópolis", "Lat": -18.4483, "Lon": -50.4514, "Status": "Closed", "Capacity": 50, "Feedstock": "Sugarcane Bagasse", "Start Year": 2012}
-    ]
-    return pd.DataFrame(plants)
+    ])
 
-df = load_mock_data()
+if "pending_queue" not in st.session_state:
+    st.session_state.pending_queue = [
+        {"Plant Name": "Unid. Gasa", "Company": "Raízen", "Parent Group": "Cosan & Shell", "State": "São Paulo", "City": "Andradina", "Lat": -20.8961, "Lon": -51.3794, "Status": "Capacity Expanded (+15%)", "Capacity": 95, "Feedstock": "Sugarcane Bagasse", "Start Year": 2003, "Confidence": 94.2, "Source": "Bloomberg Industrial Index"},
+        {"Plant Name": "Sinop Biofuel Plant", "Company": "Inpasa", "Parent Group": "Inpasa Brasil", "State": "Mato Grosso", "City": "Sinop", "Lat": -11.8541, "Lon": -55.5085, "Status": "Planned/Under Construction", "Capacity": 400, "Feedstock": "Corn", "Start Year": 2026, "Confidence": 89.7, "Source": "Mato Grosso Regional Registry"}
+    ]
+
+if "scraper_triggered" not in st.session_state:
+    st.session_state.scraper_triggered = False
+
+if "alerts_active" not in st.session_state:
+    st.session_state.alerts_active = 1
 
 # --- SIDEBAR NAVIGATION PANEL ---
 st.sidebar.title("🧭 Navigation Hub")
@@ -40,27 +50,28 @@ st.sidebar.markdown("---")
 st.sidebar.info("**Project Scope Flags:**\n- Target Country: Brazil 🇧🇷\n- Window: 2003 - 2026\n- Target Metrics: 33 Attributes")
 
 # ==========================================
-# PAGE 1: HOME 
+# PAGE 1: HOME
 # ==========================================
 if page == "🏠 Home / Workflow Overview":
     st.title("⚡ Global Ethanol Production Intelligence Hub")
     st.subheader("Automated Asset Discovery, HITL Verification & Maintenance Framework")
     st.markdown("---")
     
+    # Dynamic KPI Cards pulling straight from state database memory
     st.markdown("### 📊 Operational Queue Health Status")
     col1, col2, col3, col4 = st.columns(4)
     with col1:
-        st.info("📂 **Total Located Assets**\n## 5 Plants")
-        st.caption("Active Phase 1 Scope: Brazil")
+        st.info(f"📂 **Verified Database**\n## {len(st.session_state.production_db)} Plants")
+        st.caption("Committed to Production Schema")
     with col2:
-        st.warning("⏳ **Pending Review**\n## 2 Plants")
+        st.warning(f"⏳ **Pending Review Queue**\n## {len(st.session_state.pending_queue)} Plants")
         st.caption("Awaiting Analyst Validation")
     with col3:
-        st.success("✅ **Verified Assets**\n## 3 Plants")
-        st.caption("100% Precise Match Profile")
+        st.success(f"🤖 **Automated Pipeline Build**\n## {len(st.session_state.production_db) + len(st.session_state.pending_queue)} Total")
+        st.caption("Total System Assets Discovered")
     with col4:
-        st.error("🚨 **Active Lifecycle Alerts**\n## 1 Alert")
-        st.caption("Capacity Shift Flag Triggered")
+        st.error(f"🚨 **Lifecycle Alerts Flags**\n## {st.session_state.alerts_active} Active")
+        st.caption("Requires Manual Investigation")
 
     st.markdown("---")
     
@@ -82,163 +93,219 @@ if page == "🏠 Home / Workflow Overview":
 
     with col_right:
         st.markdown("### 🗺️ Project Execution Roadmap")
+        total_target_scope = len(st.session_state.production_db) + len(st.session_state.pending_queue)
+        pct_complete = int((len(st.session_state.production_db) / total_target_scope) * 100) if total_target_scope > 0 else 100
+        
         roadmap_data = pd.DataFrame({
-            "Market Horizon Target": ["Phase 1: Brazil (Months 1-2)", "Phase 2: United States", "Phase 3: EU & Asian Markets"],
-            "Target Asset Target Coverage (%)": [100, 0, 0]
+            "Market Horizon Target": ["Phase 1: Brazil Data Processing", "Phase 2: United States Pipeline", "Phase 3: EU & Asian Markets"],
+            "Target Verification Progress (%)": [pct_complete, 0, 0]
         })
         
         fig = px.bar(
             roadmap_data, 
             y="Market Horizon Target", 
-            x="Target Asset Target Coverage (%)", 
+            x="Target Verification Progress (%)", 
             orientation="h",
-            title="Deployment Velocity Timeline Track"
+            color_discrete_sequence=["#2ecc71"]
         )
-        fig.update_layout(xaxis_range=[0, 100], height=240, showlegend=False)
+        fig.update_layout(xaxis_range=[0, 100], height=240, showlegend=False, margin=dict(t=20, b=20, l=20, r=20))
         st.plotly_chart(fig, use_container_width=True)
-        
-        st.markdown("### 📋 33 Metric Verification Coverage")
-        with st.expander("🔍 View Required Data Category Partitions"):
-            st.markdown("""
-            * **Asset Identity:** Name, Operating Owner, Parent Entity, Status
-            * **Geographic Profile:** Lat, Long Coordinates (Google Maps verification)
-            * **Capacity Matrix:** Nameplate, Engineering Design, Normalized Scale Capacity
-            * **Feedstocks:** Input Mix Breakdown, Byproduct Yield Profile, Efficiency Coefficients
-            """)
 
 # ==========================================
 # PAGE 2: GEOSPATIAL INTELLIGENCE MAP
 # ==========================================
 elif page == "🗺️ Geospatial Intelligence Map":
     st.title("🗺️ Geospatial Intelligence Map")
-    st.subheader("Phase 1 Production Target Tracking: Brazil Clusters")
+    st.subheader("Phase 1 Production Target Tracking: Live Production Database View")
     
-    df['radius'] = df['Capacity'] * 200  
+    map_df = st.session_state.production_db.copy()
     
-    def get_color(status):
-        if status == "Operating": return [46, 204, 113, 200]
-        elif status == "Closed": return [231, 76, 60, 200]
-        else: return [241, 196, 15, 200]
+    if map_df.empty:
+        st.warning("No production data committed yet. Go to the HITL Queue to verify assets!")
+    else:
+        map_df['radius'] = map_df['Capacity'] * 200  
         
-    df['color'] = df['Status'].apply(get_color)
-    
-    layer = pdk.Layer(
-        "ScatterplotLayer",
-        df,
-        get_position=["Lon", "Lat"],
-        get_color="color",
-        get_radius="radius",
-        pickable=True,
-    )
-    
-    view_state = pdk.ViewState(latitude=-18.0, longitude=-48.0, zoom=4, pitch=0)
-    
-    r = pdk.Deck(layers=[layer], initial_view_state=view_state, tooltip={"text": "{Plant Name}\nCompany: {Company}\nStatus: {Status}\nCapacity: {Capacity}M Liters/Yr"})
-    st.pydeck_chart(r)
-    
-    st.markdown("💡 *Map Legend: **Green** = Operational | **Yellow** = Planned/Under Construction | **Red** = Closed/Decommissioned (Circle scales with Production Capacity Volume)*")
-    st.dataframe(df[["Plant Name", "Company", "State", "Status", "Capacity", "Feedstock"]])
+        def get_color(status):
+            if status == "Operating": return [46, 204, 113, 200]
+            elif status == "Closed": return [231, 76, 60, 200]
+            else: return [241, 196, 15, 200]
+            
+        map_df['color'] = map_df['Status'].apply(get_color)
+        
+        layer = pdk.Layer(
+            "ScatterplotLayer",
+            map_df,
+            get_position=["Lon", "Lat"],
+            get_color="color",
+            get_radius="radius",
+            pickable=True,
+        )
+        
+        view_state = pdk.ViewState(latitude=-18.0, longitude=-48.0, zoom=4, pitch=0)
+        
+        r = pdk.Deck(layers=[layer], initial_view_state=view_state, tooltip={"text": "{Plant Name}\nCompany: {Company}\nStatus: {Status}\nCapacity: {Capacity}M Liters/Yr"})
+        st.pydeck_chart(r)
+        
+        st.markdown("💡 *Map Legend: **Green** = Operational | **Yellow** = Capacity Expanded/Planned | **Red** = Closed (Circle scales with Production Capacity Volume)*")
+        st.dataframe(map_df[["Plant Name", "Company", "State", "Status", "Capacity", "Feedstock"]], use_container_width=True)
 
 # ==========================================
-# PAGE 3: AUTOMATED RESEARCH HUB
+# PAGE 3: AUTOMATED RESEARCH HUB (FULLY ENHANCED)
 # ==========================================
 elif page == "🔍 Automated Research & Extraction Hub":
-    st.title("🔍 Automated Research & Extraction Hub")
+    st.title("🔍 Automated AI Extraction & Research Control Center")
+    st.subheader("Background Web Scraping Machine Learning Pipeline Interface")
+    st.markdown("---")
     
-    country_sel = st.selectbox("Select Target Deployment Market Region:", ["Brazil", "India", "United States"])
+    col_control, col_stats = st.columns([1, 2])
     
-    if st.button("Trigger Automated AI Web Scraper Engine"):
-        with st.spinner("Scouting company portals, regional news indices, and government registries..."):
-            st.success(f"AI Search Complete for {country_sel}! Populating Extraction Queue below.")
+    with col_control:
+        st.markdown("#### 🎛️ Pipeline Parameters")
+        country_sel = st.selectbox("Select Target Deployment Region:", ["Brazil Scope (Phase 1 Active)", "India Scope", "United States Scope"])
+        source_filter = st.multiselect("Allowed Extraction Engines:", ["Primary Corporate Portals", "Regulatory SEC Filings", "Bloomberg Feed Index", "Gov Portals"], default=["Primary Corporate Portals", "Bloomberg Feed Index"])
+        
+        trigger_btn = st.button("Launch Extraction Sequence", use_container_width=True, type="primary")
+        if trigger_btn:
+            st.session_state.scraper_triggered = True
             
-    st.markdown("### Staged Raw Source Data Available for Parsing:")
-    st.code("""
-    [Source Index Match ID #81023]
-    URL: https://www.bloomberg.com/news/articles/brazil-biofuel-expansion-raizen
-    Text Segment Saved: 'Raízen Group executing capacity build-out at Andradina cluster, targeting a structured output expansion adjustment...'
-    Confidence Score: 94.2%
-    """)
+    with col_stats:
+        st.markdown("#### 🖥️ AI Processing Live Terminal Output Console")
+        if st.session_state.scraper_triggered:
+            placeholder = st.empty()
+            with placeholder.container():
+                st.code("Initializing background worker daemon... OK\nEstablishing primary secure handshake with target proxy arrays... OK\nPinging Raízen Corporate Investor RSS Feed Index...")
+            time.sleep(0.6)
+            with placeholder.container():
+                st.code("Target Found: URL Match ID #81023\nScraping payload content payload strings...\nParsing textual blocks using extraction weights v2.4...")
+            time.sleep(0.6)
+            with placeholder.container():
+                st.code("Parsing Complete. Entity extraction resolved:\n -> Target Plant: Unid. Gasa\n -> Mapped Metric Fields: 33/33 Data Points\n -> Statistical Match Precision: 94.2%\n[Pipeline Event]: Redirected to HITL Queue Staging Area.")
+            st.success("Scraper Extraction Cycle Finished! Target records held in validation queue.")
+        else:
+            st.info("System Standby. Click 'Launch Extraction Sequence' to activate target background scanning protocols.")
+
+    st.markdown("---")
+    st.markdown("### 📊 Extracted Target Payload Records (Awaiting Verification)")
+    
+    if len(st.session_state.pending_queue) == 0:
+        st.success("🎉 Excellent! All pipeline targets successfully processed and pushed to production database layouts.")
+    else:
+        pending_df = pd.DataFrame(st.session_state.pending_queue)
+        st.dataframe(pending_df[["Plant Name", "Company", "Source", "Confidence", "Status", "Capacity"]], use_container_width=True)
 
 # ==========================================
-# PAGE 4: HUMAN-IN-THE-LOOP (HITL) QUEUE (FIXED WITH FLATTENED ACCORDIONS)
+# PAGE 4: HUMAN-IN-THE-LOOP (HITL) QUEUE (CONNECTED STORYBOARD)
 # ==========================================
 elif page == "🖥️ Human-in-the-Loop Review Queue":
     st.title("🖥️ Analyst Split-Screen Verification Queue")
     st.subheader("Human-In-The-Loop (HITL) 100% Precision Data Verification Layout")
+    st.markdown("---")
     
-    left_pane, right_pane = st.columns(2)
-    
-    with left_pane:
-        st.subheader("📄 Raw Text Source Documents")
-        st.info("""
-        **Document Excerpt from Bloomberg Industrial Index:**
+    if len(st.session_state.pending_queue) == 0:
+        st.balloons()
+        st.success("🎉 **Queue Empty!** No records require processing right now. All verified factories are live on your Interactive Map module.")
+    else:
+        # Load the very first item in the validation queue automatically
+        current_target = st.session_state.pending_queue[0]
         
-        "Raízen's Gasa facility near Andradina, São Paulo, has logged structural optimizations. The company website confirms an adjustment to the original design layout, expanding baseline capacity by roughly 15% to hit an effective production capability of 95 Million Liters per year..."
-        """)
-        st.caption("Source URL Match: https://www.bloomberg.com/news/articles/brazil-biofuel-expansion-raizen")
+        st.warning(f"👉 Currently evaluating target index **1 of {len(st.session_state.pending_queue)}**: **{current_target['Plant Name']}** (AI Confidence Score: {current_target['Confidence']}%)")
         
-        st.markdown("### 🧮 Methodology Standards Engine")
-        st.info("Dynamic calibration applied per standard operating procedure rules:")
-        st.latex(r"Capacity_{Effective} = Capacity_{Design} \times \text{Energy Density Scale Factor}")
+        left_pane, right_pane = st.columns(2)
         
-    with right_pane:
-        st.subheader("📝 AI-Extracted Framework (33 Attributes)")
-        
-        # Form holds variables directly without nested with container blockers
-        with st.form("hitl_form"):
-            st.markdown("##### 📋 Section A: Asset Identification Profile")
-            p_name = st.text_input("Project Name (Attribute #1)", value="Unid. Gasa")
-            p_comp = st.text_input("Operating Company (Attribute #2)", value="Raízen")
-            p_parent = st.text_input("Parent Group (Attribute #3)", value="Cosan & Shell")
-                
-            st.markdown("##### 🗺️ Section B: Geospatial Coordinates")
-            p_lat = st.text_input("Latitude (Attribute #6)", value="-20.8961")
-            p_lon = st.text_input("Longitude (Attribute #7)", value="-51.3794")
-                
-            st.markdown("##### ⚙️ Section C: Technical Production Capacities")
-            p_status = st.selectbox("Operational Status (Attribute #11)", ["Operating", "Planned", "Capacity Expanded (+15%)", "Closed"], index=2)
-            p_cap = st.number_input("Effective Annual Capacity in M Liters/Yr (Attribute #15)", value=95)
-                
-            st.markdown("##### 🌾 Section D: Feedstock Material Profile & Byproducts")
-            p_feed = st.text_input("Feedstock Raw Material (Attribute #22)", value="Sugarcane Bagasse")
-            p_byprod = st.text_input("Primary Generated Byproduct (Attribute #25)", value="Evinasse Bio-Compost")
+        with left_pane:
+            st.markdown("### 📄 Raw Source Document Snippet")
+            st.info(f"""
+            **Document Source Extract Panel ({current_target['Source']}):**
             
-            submit = st.form_submit_button("Verify & Push to Production Database")
-            if submit:
-                st.balloons()
-                st.success("Asset Data Verified Successfully! Logged to Client Template Sheet.")
+            "The infrastructure logs for facility layout execution profiles verify major operational changes. The operating entity, {current_target['Company']}, has logged structural changes. Our metrics confirm an adjustment to design criteria, scaling output capacity metrics to hit an effective production capability of {current_target['Capacity']} Million Liters per year..."
+            """)
+            st.caption("Verification Reference Engine Target Key URL Link: https://www.dataextraction-index.int/target_match")
+            
+            st.markdown("### 🧮 Applied Methodology Standard Logic")
+            st.latex(r"Capacity_{Effective} = Capacity_{Design} \times \text{Energy Density Scale Factor}")
+            st.caption("Standard Calibration Rule Framework Applied per SOP guidelines.")
+            
+        with right_pane:
+            st.markdown("### 📝 Verified Extraction Values Form (33 Parameters)")
+            
+            with st.form("hitl_interactive_form"):
+                st.markdown("##### 📋 Asset Identity Markers")
+                form_name = st.text_input("Project Factory Name (Field #1)", value=current_target["Plant Name"])
+                form_company = st.text_input("Operating Entity Owner (Field #2)", value=current_target["Company"])
+                form_parent = st.text_input("Parent Entity Group (Field #3)", value=current_target["Parent Group"])
+                
+                st.markdown("##### 🗺️ Geographic Location Data (Google Maps Extraction)")
+                form_lat = st.text_input("Latitude Coordinate (Field #6)", value=str(current_target["Lat"]))
+                form_lon = st.text_input("Longitude Coordinate (Field #7)", value=str(current_target["Lon"]))
+                
+                st.markdown("##### ⚙️ Production Metrics")
+                form_status = st.selectbox("Current Operational Flag (Field #11)", ["Operating", "Planned/Under Construction", "Capacity Expanded (+15%)", "Closed"], index=0)
+                form_capacity = st.number_input("Standardized Capacity in M Liters/Yr (Field #15)", value=current_target["Capacity"])
+                form_feedstock = st.text_input("Feedstock Input Classification (Field #22)", value=current_target["Feedstock"])
+                
+                submit_verification = st.form_submit_button("Commit & Verify to Production Database", use_container_width=True)
+                
+                if submit_verification:
+                    # Construct clean validated record object dictionary
+                    validated_asset = {
+                        "Plant Name": form_name,
+                        "Company": form_company,
+                        "Parent Group": form_parent,
+                        "State": current_target["State"],
+                        "City": current_target["City"],
+                        "Lat": float(form_lat),
+                        "Lon": float(form_lon),
+                        "Status": form_status,
+                        "Capacity": int(form_capacity),
+                        "Feedstock": form_feedstock,
+                        "Start Year": current_target["Start Year"]
+                    }
+                    
+                    # 🔴 CONNECTED ACTION: Inject item dynamically into production state database dataframe memory
+                    st.session_state.production_db = pd.concat([st.session_state.production_db, pd.DataFrame([validated_asset])], ignore_index=True)
+                    
+                    # 🔴 CONNECTED ACTION: Pop item completely out of pending staging index queue array lists
+                    st.session_state.pending_queue.pop(0)
+                    
+                    st.success(f"Success! {form_name} committed to Master Production Schema. Real-time maps updated.")
+                    time.sleep(1)
+                    st.rerun()
 
     st.markdown("---")
     st.subheader("📥 Export Finalized Verification Delivery Documents")
-    
     timestamp_str = datetime.now().strftime("%Y%m%d_%H%M")
-    export_filename = f"Brazil_{len(df)}_Projects_{timestamp_str}_FinalReport.csv"
-    csv_data = df[["Plant Name", "Company", "Parent Group", "State", "Status", "Capacity", "Feedstock"]].to_csv(index=False)
+    export_filename = f"Brazil_{len(st.session_state.production_db)}_Projects_{timestamp_str}_FinalReport.csv"
+    csv_data = st.session_state.production_db[["Plant Name", "Company", "Parent Group", "State", "Status", "Capacity", "Feedstock"]].to_csv(index=False)
     
-    st.download_button(
-        label="Download Generated Spreadsheet Template (.CSV)",
-        data=csv_data,
-        file_name=export_filename,
-        mime="text/csv"
-    )
+    st.download_button(label="Download Generated Spreadsheet Template (.CSV)", data=csv_data, file_name=export_filename, mime="text/csv")
     st.caption(f"Target Output Pattern Generated: `{export_filename}`")
 
 # ==========================================
-# PAGE 5: MAINTENANCE & LIFECYCLE ALERTS
+# PAGE 5: MAINTENANCE & LIFECYCLE ALERTS (CONNECTED ACTIONS)
 # ==========================================
 elif page == "🔔 Maintenance Alerts & Lifecycle":
     st.title("🔔 Asset Lifecycle Maintenance Engine")
     st.subheader("Dynamic Delta Notifications & Status Alarm Rules")
+    st.markdown("---")
     
-    st.warning("""
-    ⚠️ **System Delta Warning Flag Alert (ID: #AL-90182)**
-    * **Asset:** Unid. Gasa Plant (Operating Company: Raízen)
-    * **Trigger Condition Detect Event:** 15% Capacity change detected via newly published Corporate Sustainability Report.
-    * **Action Required:** Analyst validation review missing in verified production schema.
-    """)
-    
-    col_a, col_b = st.columns(2)
-    if col_a.button("Open Operational Override Verification Window"):
-        st.info("Routing process to HITL Screen...")
-    if col_b.button("Dismiss System Status Warning Flag"):
-        st.success("Alert dismissed.")
+    if st.session_state.alerts_active == 0:
+        st.success("✅ **All Active Alerts Resolved!** Systems running steady across 3-year timeline index tracking profiles.")
+    else:
+        st.error("""
+        ⚠️ **System Delta Warning Flag Alert (ID: #AL-90182)**
+        * **Asset Context Profile:** Unid. Gasa Plant (Operating Entity Owner: Raízen)
+        * **Trigger Event Condition:** 15% Quantitative production expansion variation caught via corporate sustainability filing lookup.
+        * **Status Condition:** Validation log out-of-sync with production state entry attributes. Action required.
+        """)
+        
+        col_a, col_b = st.columns(2)
+        with col_a:
+            resolve_alert = st.button("Authorize Core System Override Alignment", use_container_width=True, type="primary")
+            if resolve_alert:
+                st.session_state.alerts_active = 0
+                st.success("Delta values aligned across database configurations. Threat status safe.")
+                time.sleep(1)
+                st.rerun()
+        with col_b:
+            if st.button("Dismiss System Status Warning Flag", use_container_width=True):
+                st.info("Notification dismissed.")
