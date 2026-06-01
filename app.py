@@ -1,54 +1,100 @@
-# Task Prompt: AI-Powered Ethanol Plant Tracker (Demo Build)
+import streamlit as st
+import pandas as pd
+import plotly.express as px
 
-## 1. Project Overview & Objective
-The goal is to build a functional prototype/demo of a global Ethanol Plant Metric Tracker. The initial focus is on **Brazil**, tracking plants that were active, planned, or under construction between **2003 and 2026**. 
+# --- 1. MOCK DATA GENERATOR ---
+# In a real app, this would load from your verified database/CSV
+def load_mock_data():
+    data = [
+        {"Plant Name": "Raízen Costa Pinto", "State": "SP", "Lat": -22.70, "Long": -47.64, "Status": "Active", "Capacity": 600000, "Year": 2003},
+        {"Plant Name": "FS Bioenergia Lucas", "State": "MT", "Lat": -13.06, "Long": -55.91, "Status": "Active", "Capacity": 530000, "Year": 2017},
+        {"Plant Name": "São Martinho Usina", "State": "SP", "Lat": -21.31, "Long": -48.11, "Status": "Active", "Capacity": 700000, "Year": 2005},
+        {"Plant Name": "Inpasa Sinop", "State": "MT", "Lat": -11.85, "Long": -55.50, "Status": "Active", "Capacity": 800000, "Year": 2019},
+        {"Plant Name": "Arezzo Ethanol Project", "State": "GO", "Lat": -17.92, "Long": -51.72, "Status": "Under Construction", "Capacity": 300000, "Year": 2024},
+        {"Plant Name": "Neomille Maracaju", "State": "MS", "Lat": -21.61, "Long": -55.16, "Status": "Planned", "Capacity": 450000, "Year": 2025},
+        {"Plant Name": "Cerradinho Bio", "State": "GO", "Lat": -17.88, "Long": -51.71, "Status": "Active", "Capacity": 400000, "Year": 2011},
+        {"Plant Name": "Albioma Solar-Eth", "State": "MT", "Lat": -15.60, "Long": -56.09, "Status": "Planned", "Capacity": 200000, "Year": 2026},
+    ]
+    return pd.DataFrame(data)
 
-The system must automate data extraction using AI from public sources, pass the data through a validation layer, and present it in an analyst dashboard for Human-in-the-Loop (HITL) verification. The final output must seamlessly map to a structured, 33-data-point client spreadsheet template.
+# --- 2. PAGE CONFIG ---
+st.set_page_config(layout="wide", page_title="Brazil Ethanol Map 2003-2026")
 
----
+st.title("🌎 Global Ethanol Tracker: Brazil Dashboard")
+st.markdown("### Visualization of Active, Planned, and Under Construction Plants (2003 - 2026)")
 
-## 2. Core Architecture & Feature Requirements
+# --- 3. SIDEBAR FILTERS ---
+st.sidebar.header("Filter Options")
 
-### Feature 1: AI Data Extraction Engine (Public Sources)
-- **Capability:** Build a scraping/ingestion layer that targets public data sources (news, regulatory filings, industry reports) regarding Brazilian ethanol plants.
-- **AI Task:** Use an LLM/NER (Named Entity Recognition) pipeline to parse unstructured text and extract specific plant metrics.
-- **Temporal Filter:** Restrict/flag data to the 2003–2026 window.
+# Year Slider
+year_range = st.sidebar.slider(
+    "Select Operational Year Range",
+    min_value=2003,
+    max_value=2026,
+    value=(2003, 2026)
+)
 
-### Feature 2: Human-in-the-Loop (HITL) Analyst Dashboard
-- **UI/UX:** A clean, scannable dashboard for data analysts.
-- **Functionality:** - Display AI-extracted plant data side-by-side with the source URL/text for quick verification.
-  - Allow analysts to **approve, edit, or reject** the automated AI outputs.
-  - Highlight status changes (e.g., "Planned" to "Under Construction") and capacity updates visually.
+# Status Filter
+status_options = ["Active", "Planned", "Under Construction"]
+selected_status = st.sidebar.multiselect("Plant Status", status_options, default=status_options)
 
-### Feature 3: Export & Mapping Engine
-- **Requirement:** Map verified data strictly to the client-provided spreadsheet template consisting of **33 specific data points**.
-- **Action:** A "Download/Export to Template" button that generates the finalized spreadsheet.
+# Load and Filter Data
+df = load_mock_data()
+filtered_df = df[
+    (df['Year'] >= year_range[0]) & 
+    (df['Year'] <= year_range[1]) & 
+    (df['Status'].isin(selected_status))
+]
 
----
+# --- 4. KPI METRICS ---
+col1, col2, col3, col4 = st.columns(4)
+col1.metric("Total Plants", len(filtered_df))
+col2.metric("Total Capacity (m3/y)", f"{filtered_df['Capacity'].sum():,}")
+col3.metric("Active Plants", len(filtered_df[filtered_df['Status'] == 'Active']))
+col4.metric("Pipeline (Planned/UC)", len(filtered_df[filtered_df['Status'] != 'Active']))
 
-## 3. Tech Stack Suggestions (For Speed & Scalability)
-* **Frontend/Dashboard:** Streamlit or Pillar/Gradio (for rapid Python-based UI prototyping) or React (if building a full UI).
-* **AI/LLM Layer:** Gemini API (e.g., Gemini 1.5 Pro) utilizing **Structured Outputs (JSON Mode)** to ensure data maps perfectly to the 33 required schema attributes.
-* **Backend & Data:** Python (Pandas/OpenPyXL for spreadsheet manipulation), FastAPI (optional, for routing).
+# --- 5. MAP VISUALIZATION (PLOTLY) ---
+st.subheader("Interactive Plant Geography")
 
----
+if not filtered_df.empty:
+    fig = px.scatter_mapbox(
+        filtered_df,
+        lat="Lat",
+        lon="Long",
+        size="Capacity",
+        color="Status",
+        hover_name="Plant Name",
+        hover_data={"Lat": False, "Long": False, "Capacity": True, "Year": True},
+        color_discrete_map={
+            "Active": "#2ecc71",            # Green
+            "Under Construction": "#f1c40f", # Yellow
+            "Planned": "#e67e22"             # Orange
+        },
+        zoom=3.5,
+        height=600,
+        center={"lat": -15.79, "lon": -47.88} # Focused on Brazil
+    )
 
-## 4. Specific Instructions for the Demo Build
+    # Styling the Map
+    fig.update_layout(
+        mapbox_style="carto-darkmatter", # High-contrast professional look
+        margin={"r":0,"t":0,"l":0,"b":0},
+        legend=dict(yanchor="top", y=0.99, xanchor="left", x=0.01)
+    )
 
-### Step 1: Mock Data & Schema Setup
-- Create a mock template mimicking the client's **33 data points** (including: Plant Name, Location/Region, Status [Active/Planned/Under Construction], Capacity, Operational Year, Source URL).
-- Generate a sample dataset of 3–5 Brazilian ethanol plants with messy/unstructured text to test the AI's extraction capabilities.
+    st.plotly_chart(fig, use_container_width=True)
+else:
+    st.warning("No plants match the selected filters.")
 
-### Step 2: Develop the Streamlit/UI Prototype
-- **Screen 1: Ingestion Feed** – Show raw text/news articles on the left, and the AI’s extracted 33 data points in an editable form on the right.
-- **Screen 2: Master Inventory** – A tabular view tracking historical changes from 2003 to 2026, specifically flagging plant status changes and capacity updates (critical for long-term operational planning).
+# --- 6. DATA TABLE ---
+st.subheader("Verified Plant Details")
+st.dataframe(filtered_df.sort_values(by="Year", ascending=False), use_container_width=True)
 
-### Step 3: Implement the Export Feature
-- Ensure that clicking "Export" populates the exact columns required by the client template without breaking any formatting.
-
----
-
-## 5. Deliverables
-1. **Source Code:** Fully documented GitHub repository.
-2. **Live Demo UI:** A working Streamlit/Web dashboard showcasing the end-to-end flow (Raw Text -> AI Extraction -> Analyst Edit -> Spreadsheet Export).
-3. **Sample Output:** A completed client template spreadsheet containing the verified demo data.
+# --- 7. EXPORT BUTTON ---
+csv = filtered_df.to_csv(index=False).encode('utf-8')
+st.download_button(
+    label="📂 Export Filtered Data to Template",
+    data=csv,
+    file_name="brazil_ethanol_tracker.csv",
+    mime="text/csv",
+)
