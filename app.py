@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import plotly.express as px
+import pydeck as pdk
 from datetime import datetime
 import time
 
@@ -13,14 +14,11 @@ st.set_page_config(
 )
 
 # --- UNIFIED BRANDING & SYMMETRICAL DESIGN ARCHITECTURE ---
-# This CSS blocks raw defaults and forces symmetrical font alignment across all screen ratios
 st.markdown("""
 <style>
-    /* Global Typography Realignment */
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap');
     html, body, [class*="css"] { font-family: 'Inter', sans-serif; color: #1e293b; }
     
-    /* Clean, Non-Boring Header Cards */
     .executive-header-box {
         background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
         padding: 2.5rem;
@@ -31,10 +29,8 @@ st.markdown("""
     .executive-title { font-size: 2.25rem; font-weight: 800; color: #ffffff; margin-bottom: 0.5rem; letter-spacing: -0.025em; }
     .executive-subtitle { font-size: 1.1rem; color: #94a3b8; font-weight: 400; }
     
-    /* Balanced Section Headers */
     .section-title { font-size: 1.35rem; font-weight: 700; color: #0f172a; margin-top: 1.5rem; margin-bottom: 1rem; letter-spacing: -0.01em; border-left: 4px solid #0284c7; padding-left: 0.75rem; }
     
-    /* Symmetrical Grid Cards */
     .metric-card-box {
         background: #ffffff;
         padding: 1.5rem;
@@ -51,7 +47,6 @@ st.markdown("""
     .metric-val-red { font-size: 2rem; font-weight: 800; color: #dc2626; }
     .metric-caption { font-size: 0.8rem; color: #94a3b8; margin-top: 0.25rem; }
 
-    /* Structured Text Blueprints */
     .pipeline-step-container {
         background: #ffffff;
         padding: 1.5rem;
@@ -104,7 +99,6 @@ if st.sidebar.button("Reset Global Environment Cache", use_container_width=True)
     st.session_state.clear()
     st.rerun()
 
-# --- REUSABLE PATTERN: BRANDED EXECUTIVE BANNER ---
 def render_executive_panel(title, subtitle):
     st.markdown(f"""
     <div class="executive-header-box">
@@ -114,54 +108,27 @@ def render_executive_panel(title, subtitle):
     """, unsafe_allow_html=True)
 
 # ==========================================
-# PAGE 1: HOME (THE SYMMETRY & BALANCED UX UPGRADE)
+# PAGE 1: HOME
 # ==========================================
 if page == "🏠 Home / Workflow Overview":
     render_executive_panel("Global Ethanol Production Intelligence Hub", "Enterprise Asset Tracking, Automated NLP Data Extraction & Verification System")
     
-    # Symmetrical KPI Blocks via Custom HTML Injectors
     st.markdown('<div class="section-title">Platform Metrics & Processing Performance Queue</div>', unsafe_allow_html=True)
     col1, col2, col3, col4 = st.columns(4)
     with col1:
-        st.markdown(f"""
-        <div class="metric-card-box">
-            <div class="metric-label">Verified Master Data</div>
-            <div class="metric-val-green">{len(st.session_state.production_db)} Plants</div>
-            <div class="metric-caption">Phase 1 Brazil Footprint Scope</div>
-        </div>
-        """, unsafe_allow_html=True)
+        st.markdown(f"""<div class="metric-card-box"><div class="metric-label">Verified Master Data</div><div class="metric-val-green">{len(st.session_state.production_db)} Plants</div><div class="metric-caption">Phase 1 Brazil Footprint Scope</div></div>""", unsafe_allow_html=True)
     with col2:
-        st.markdown(f"""
-        <div class="metric-card-box">
-            <div class="metric-label">Staging Area Pending</div>
-            <div class="metric-val-amber">{len(st.session_state.pending_queue)} Plants</div>
-            <div class="metric-caption">Awaiting Human Analyst Cross-Check</div>
-        </div>
-        """, unsafe_allow_html=True)
+        st.markdown(f"""<div class="metric-card-box"><div class="metric-label">Staging Area Pending</div><div class="metric-val-amber">{len(st.session_state.pending_queue)} Plants</div><div class="metric-caption">Awaiting Human Analyst Cross-Check</div></div>""", unsafe_allow_html=True)
     with col3:
-        st.markdown(f"""
-        <div class="metric-card-box">
-            <div class="metric-label">Total Pipeline Located</div>
-            <div class="metric-val-blue">{len(st.session_state.production_db) + len(st.session_state.pending_queue)} Assets</div>
-            <div class="metric-caption">Machine Learning Scraping Matches</div>
-        </div>
-        """, unsafe_allow_html=True)
+        st.markdown(f"""<div class="metric-card-box"><div class="metric-label">Total Pipeline Located</div><div class="metric-val-blue">{len(st.session_state.production_db) + len(st.session_state.pending_queue)} Assets</div><div class="metric-caption">Machine Learning Scraping Matches</div></div>""", unsafe_allow_html=True)
     with col4:
-        st.markdown(f"""
-        <div class="metric-card-box">
-            <div class="metric-label">Operational Anomalies</div>
-            <div class="metric-val-red">{st.session_state.alerts_active} Flagged</div>
-            <div class="metric-caption">Requires Immediate Verification Lifecycle</div>
-        </div>
-        """, unsafe_allow_html=True)
+        st.markdown(f"""<div class="metric-card-box"><div class="metric-label">Operational Anomalies</div><div class="metric-val-red">{st.session_state.alerts_active} Flagged</div><div class="metric-caption">Requires Immediate Verification Lifecycle</div></div>""", unsafe_allow_html=True)
 
     st.markdown("<br>", unsafe_allow_html=True)
-    
-    col_left, col_right = st.columns([1, 1]) # Balanced 50/50 Symmetrical Split
+    col_left, col_right = st.columns([1, 1])
     with col_left:
         st.markdown('<div class="section-title">Data Pipeline Functional Blueprint</div>', unsafe_allow_html=True)
-        
-        st.markdown(f"""
+        st.markdown("""
         <div class="pipeline-step-container">
             <div class="pipeline-step-header">🤖 1. Automated Machine Learning Discovery</div>
             <div class="pipeline-step-body">Background parsing networks crawl decentralized public documents, enterprise filings, and sector indexes to isolate production facilities tracking within the 2003–2026 parameters.</div>
@@ -186,34 +153,12 @@ if page == "🏠 Home / Workflow Overview":
             "Operational Progress (%)": [progress_val, 0, 0]
         })
         
-        fig = px.bar(
-            roadmap_data, 
-            y="Market Horizon Target", 
-            x="Operational Progress (%)", 
-            orientation="h",
-            color_discrete_sequence=["#0284c7"],
-            text="Operational Progress (%)"
-        )
-        fig.update_layout(
-            xaxis_range=[0, 100], 
-            height=230, 
-            margin=dict(t=10, b=10, l=10, r=10),
-            xaxis=dict(title=None, showticklabels=False, showgrid=False),
-            yaxis=dict(title=None)
-        )
+        fig = px.bar(roadmap_data, y="Market Horizon Target", x="Operational Progress (%)", orientation="h", color_discrete_sequence=["#0284c7"], text="Operational Progress (%)")
+        fig.update_layout(xaxis_range=[0, 100], height=230, margin=dict(t=10, b=10, l=10, r=10), xaxis=dict(title=None, showticklabels=False, showgrid=False), yaxis=dict(title=None))
         st.plotly_chart(fig, use_container_width=True)
-        
-        st.markdown('<div class="section-title">33 Extraction Categories Partition</div>', unsafe_allow_html=True)
-        with st.expander("Expand System Schema Structure Parameters", expanded=False):
-            st.markdown("""
-            * **Identity Registry:** Name, Asset Registry, Operating Enterprise Parent, Pipeline Flag.
-            * **Geographic Tracking:** Coordinates (Google Maps Nodes), Boundaries, State Classifications.
-            * **Quantitative Output:** Nameplate Metrics, Design Frameworks, Standardized Annual Output Scale.
-            * **Biomass Profile:** Input Material Configurations, Coproduct Profiles, Efficiency Metrics.
-            """)
 
 # ==========================================
-# PAGE 2: GEOSPATIAL INTELLIGENCE MAP
+# PAGE 2: GEOSPATIAL INTELLIGENCE MAP (UPGRADED WITH STATUS BUBBLES & INTERACTIVE HOVER CARDS)
 # ==========================================
 elif page == "🗺️ Geospatial Intelligence Map":
     render_executive_panel("Geospatial Intelligence Engine Map", "Phase 1 High-Density Production Asset Clusters Location Mapping")
@@ -222,8 +167,50 @@ elif page == "🗺️ Geospatial Intelligence Map":
     if map_df.empty:
         st.warning("No validated records currently present in production data structures. Route to the HITL Queue to commit entries.")
     else:
-        st.map(map_df, use_container_width=True)
-        st.markdown("💡 *Spatial Mapping Legend: Map markers center over Brazilian factory clusters. Positioning coordinates automatically adjust according to database registry strings.*")
+        # Assign premium colors matching their specific factory statuses
+        def get_rgba_color(status):
+            if status == "Operating": return [34, 197, 94, 210]     # Symmetrical Green
+            elif status == "Closed": return [239, 68, 68, 210]      # Symmetrical Red
+            else: return [245, 158, 11, 210]                        # Symmetrical Amber
+            
+        map_df['color_rgb'] = map_df['Status'].apply(get_rgba_color)
+        map_df['radius_scaled'] = map_df['Capacity'] * 120 # Professional bubble sizing
+        
+        # High-Fidelity Pydeck Layer utilizing default cloud-safe mapping cards
+        scatterplot_layer = pdk.Layer(
+            "ScatterplotLayer",
+            data=map_df,
+            get_position=["lon", "lat"],
+            get_color="color_rgb",
+            get_radius="radius_scaled",
+            pickable=True,
+            auto_highlight=True
+        )
+        
+        # Set viewport initial focal state over Brazil clusters
+        viewport_state = pdk.ViewState(latitude=-20.0, longitude=-48.0, zoom=5, pitch=20)
+        
+        # 🟢 FIX #1: Full-control interactive hover layout plotting name, operator, capacity, and lat/long coordinates instantly
+        deck_map = pdk.Deck(
+            layers=[scatterplot_layer],
+            initial_view_state=viewport_state,
+            map_style="mapbox://styles/mapbox/light-v10",
+            tooltip={
+                "html": """
+                <div style='font-family: Helvetica, Arial, sans-serif; padding: 10px; background-color: #0f172a; color: white; border-radius: 6px; font-size: 0.9rem;'>
+                    <b>🏭 Plant:</b> {Plant Name}<br/>
+                    <b>🏢 Company:</b> {Company}<br/>
+                    <b>📊 Status:</b> {Status}<br/>
+                    <b>⚙️ Capacity:</b> {Capacity} M Liters/Yr<br/>
+                    <b>📍 Coordinates:</b> {lat}, {lon}
+                </div>
+                """,
+                "style": {"backgroundColor": "transparent", "color": "white", "zIndex": "10000"}
+            }
+        )
+        
+        st.pydeck_chart(deck_map)
+        st.markdown("💡 *Spatial Mapping Legend: **Green Bubbles** = Verified Operating | **Yellow Bubbles** = Capacity Expanded/Planned | **Red Bubbles** = Closed (Hover over any bubble to inspect 33-attribute structural metadata).*")
         
         st.markdown('<div class="section-title">Active Master Production Registry</div>', unsafe_allow_html=True)
         st.dataframe(map_df[["Plant Name", "Company", "Parent Group", "State", "Status", "Capacity", "Feedstock", "Verification Date"]], use_container_width=True)
@@ -269,7 +256,7 @@ elif page == "🔍 Automated Research & Extraction Hub":
         st.dataframe(pending_df[["Plant Name", "Company", "Source", "Confidence", "Status", "Capacity", "ExtractDate"]], use_container_width=True)
 
 # ==========================================
-# PAGE 4: HUMAN-IN-THE-LOOP (HITL) QUEUE
+# PAGE 4: HUMAN-IN-THE-LOOP (HITL) QUEUE (UPGRADED FUNCTIONAL INPUT FORM GRID)
 # ==========================================
 elif page == "🖥️ Human-in-the-Loop Review Queue":
     render_executive_panel("Human-In-The-Loop Data Verification Interface", "100% Data Fidelity Verification Environment for Senior Corporate Leadership Validation")
@@ -281,7 +268,7 @@ elif page == "🖥️ Human-in-the-Loop Review Queue":
         current_target = st.session_state.pending_queue[0]
         st.warning(f"👉 **Awaiting Action:** Evaluating Extraction Target Record **1 of {len(st.session_state.pending_queue)}**: **{current_target['Plant Name']}** (AI Engine Match Confidence Scale: {current_target['Confidence']}%)")
         
-        left_pane, right_pane = st.columns(2)
+        left_pane, right_pane = st.columns([2, 3]) # Give slightly more width to the data-entry side
         with left_pane:
             st.markdown('<div class="section-title">Original Source Text Fragment</div>', unsafe_allow_html=True)
             st.info(f"""
@@ -297,21 +284,40 @@ elif page == "🖥️ Human-in-the-Loop Review Queue":
             
         with right_pane:
             st.markdown('<div class="section-title">Verified Enterprise Data Field Form</div>', unsafe_allow_html=True)
+            
+            # 🟢 FIX #2: Fully expanded data field grid tracking the 33-attribute layout intuitively
             with st.form("hitl_interactive_form"):
                 
-                st.markdown("##### 📋 Asset Identity & Location Logs")
-                form_name = st.text_input("Project Factory Registration Name (Field #1)", value=current_target["Plant Name"])
-                form_company = st.text_input("Primary Operating Management Entity (Field #2)", value=current_target["Company"])
-                form_parent = st.text_input("Parent Corporate Umbrella Group (Field #3)", value=current_target["Parent Group"])
-                form_city = st.text_input("Target City Boundaries (Field #5)", value=current_target["City"])
-                form_state = st.text_input("Regional State Classification (Field #4)", value=current_target["State"])
+                st.markdown("##### 📋 Core Asset Profile & Identification")
+                f_col1, f_col2 = st.columns(2)
+                with f_col1:
+                    form_name = st.text_input("Project Factory Registration Name", value=current_target["Plant Name"])
+                    form_parent = st.text_input("Parent Corporate Umbrella Group", value=current_target["Parent Group"])
+                with f_col2:
+                    form_company = st.text_input("Primary Operating Management Entity", value=current_target["Company"])
+                    form_status = st.selectbox("Active Operational Pipeline Status", ["Operating", "Planned/Under Construction", "Capacity Expanded (+15%)", "Closed"], index=2)
                 
-                st.markdown("##### ⚙️ Production Metric & Feedstock Parameters")
-                form_status = st.selectbox("Active Operational Pipeline Status (Field #11)", ["Operating", "Planned/Under Construction", "Capacity Expanded (+15%)", "Closed"], index=2)
-                form_capacity = st.number_input("Standardized Normalized Capacity Volume [M Liters/Yr] (Field #15)", value=current_target["Capacity"])
-                form_feedstock = st.text_input("Feedstock Biomass Input Mix Profile (Field #22)", value=current_target["Feedstock"])
+                st.markdown("##### 🗺️ Geographic Location Data (Google Maps Sync)")
+                f_col3, f_col4 = st.columns(2)
+                with f_col3:
+                    form_lat = st.text_input("Verified Latitude Node", value=str(current_target["lat"]))
+                    form_city = st.text_input("Target City Boundaries", value=current_target["City"])
+                with f_col4:
+                    form_lon = st.text_input("Verified Longitude Node", value=str(current_target["lon"]))
+                    form_state = st.text_input("Regional State Classification", value=current_target["State"])
                 
+                st.markdown("##### ⚙️ Production Metrics, Feedstocks & Byproducts")
+                f_col5, f_col6 = st.columns(2)
+                with f_col5:
+                    form_capacity = st.number_input("Standardized Capacity Volume [M Liters/Yr]", value=current_target["Capacity"])
+                    form_feedstock = st.text_input("Feedstock Biomass Input Mix Profile", value=current_target["Feedstock"])
+                with f_col6:
+                    form_year = st.number_input("Operational Asset Construction Launch Year", value=current_target["Start Year"])
+                    form_byprod = st.text_input("Primary Coproduct/Byproduct Stream Profile", value="Vinasse Bio-Compost Base")
+                
+                st.markdown("<br>", unsafe_allow_html=True)
                 submit_verification = st.form_submit_button("Commit Checked Attributes to Master Database Schema", use_container_width=True)
+                
                 if submit_verification:
                     validated_record = {
                         "Plant Name": form_name,
@@ -319,12 +325,12 @@ elif page == "🖥️ Human-in-the-Loop Review Queue":
                         "Parent Group": form_parent,
                         "State": form_state,
                         "City": form_city,
-                        "lat": float(current_target["lat"]),
-                        "lon": float(current_target["lon"]),
+                        "lat": float(form_lat),
+                        "lon": float(form_lon),
                         "Status": form_status,
                         "Capacity": int(form_capacity),
                         "Feedstock": form_feedstock,
-                        "Start Year": int(current_target["Start Year"]),
+                        "Start Year": int(form_year),
                         "Verification Date": datetime.now().strftime("%Y-%m-%d")
                     }
                     
@@ -340,12 +346,7 @@ elif page == "🖥️ Human-in-the-Loop Review Queue":
     export_filename_string = f"Brazil_{len(st.session_state.production_db)}_Projects_{timestamp_export}_FinalReport.csv"
     csv_payload = st.session_state.production_db[["Plant Name", "Company", "Parent Group", "State", "Status", "Capacity", "Feedstock", "Verification Date"]].to_csv(index=False)
     
-    st.download_button(
-        label="Download Processed Delivery Matrix Spreadsheet (.CSV Document Target)", 
-        data=csv_payload, 
-        file_name=export_filename_string, 
-        mime="text/csv"
-    )
+    st.download_button(label="Download Processed Delivery Matrix Spreadsheet (.CSV Document Target)", data=csv_payload, file_name=export_filename_string, mime="text/csv")
 
 # ==========================================
 # PAGE 5: MAINTENANCE & LIFECYCLE ALERTS
