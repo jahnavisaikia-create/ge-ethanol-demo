@@ -2,11 +2,10 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import plotly.express as px
-import pydeck as pdk
 from datetime import datetime
 import time
 
-# --- CXO COMMAND CENTER INTERFACE CONFIGURATION ---
+# --- ENTERPRISE LAYOUT SYSTEM ---
 st.set_page_config(
     page_title="GE Global Ethanol Intelligence Command Center", 
     layout="wide",
@@ -56,6 +55,14 @@ st.markdown("""
     }
     .pipeline-step-header { font-size: 1.05rem; font-weight: 700; color: #1e293b; margin-bottom: 0.5rem; display: flex; align-items: center; }
     .pipeline-step-body { font-size: 0.95rem; color: #475569; line-height: 1.6; text-align: justify; }
+    
+    /* Forces absolute form alignment symmetry */
+    div[data-testid="stForm"] {
+        border: 1px solid #e2e8f0 !important;
+        padding: 2rem !important;
+        border-radius: 12px !important;
+        background: #ffffff !important;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -131,7 +138,7 @@ if page == "🏠 Home / Workflow Overview":
         st.markdown("""
         <div class="pipeline-step-container">
             <div class="pipeline-step-header">🤖 1. Automated Machine Learning Discovery</div>
-            <div class="pipeline-step-body">Background parsing networks crawl decentralized public documents, enterprise filings, and sector indexes to isolate production facilities tracking within the 2003–2026 parameters.</div>
+            <div class="pipeline-step-body">Background parsing networks crawl decentralized public documents, enterprise filings, and sector indices to isolate production facilities tracking within the 2003–2026 parameters.</div>
         </div>
         <div class="pipeline-step-container">
             <div class="pipeline-step-header">🖥️ 2. Human-In-The-Loop Verification Matrix</div>
@@ -158,7 +165,7 @@ if page == "🏠 Home / Workflow Overview":
         st.plotly_chart(fig, use_container_width=True)
 
 # ==========================================
-# PAGE 2: GEOSPATIAL INTELLIGENCE MAP (UPGRADED WITH STATUS BUBBLES & INTERACTIVE HOVER CARDS)
+# PAGE 2: GEOSPATIAL INTELLIGENCE MAP (ZERO-FAIL BROWSER-RENDERED OPEN STREET MAPS)
 # ==========================================
 elif page == "🗺️ Geospatial Intelligence Map":
     render_executive_panel("Geospatial Intelligence Engine Map", "Phase 1 High-Density Production Asset Clusters Location Mapping")
@@ -167,50 +174,43 @@ elif page == "🗺️ Geospatial Intelligence Map":
     if map_df.empty:
         st.warning("No validated records currently present in production data structures. Route to the HITL Queue to commit entries.")
     else:
-        # Assign premium colors matching their specific factory statuses
-        def get_rgba_color(status):
-            if status == "Operating": return [34, 197, 94, 210]     # Symmetrical Green
-            elif status == "Closed": return [239, 68, 68, 210]      # Symmetrical Red
-            else: return [245, 158, 11, 210]                        # Symmetrical Amber
-            
-        map_df['color_rgb'] = map_df['Status'].apply(get_rgba_color)
-        map_df['radius_scaled'] = map_df['Capacity'] * 120 # Professional bubble sizing
-        
-        # High-Fidelity Pydeck Layer utilizing default cloud-safe mapping cards
-        scatterplot_layer = pdk.Layer(
-            "ScatterplotLayer",
-            data=map_df,
-            get_position=["lon", "lat"],
-            get_color="color_rgb",
-            get_radius="radius_scaled",
-            pickable=True,
-            auto_highlight=True
+        # Create a clean data-info string column for the interactive hover block card
+        map_df["Hover Details"] = (
+            "🏭 Plant: " + map_df["Plant Name"] + "<br>" +
+            "🏢 Company: " + map_df["Company"] + "<br>" +
+            "⚡ Capacity: " + map_df["Capacity"].astype(str) + " M Liters/Yr<br>" +
+            "📍 Lat/Lon: " + map_df["lat"].astype(str) + ", " + map_df["lon"].astype(str)
         )
         
-        # Set viewport initial focal state over Brazil clusters
-        viewport_state = pdk.ViewState(latitude=-20.0, longitude=-48.0, zoom=5, pitch=20)
-        
-        # 🟢 FIX #1: Full-control interactive hover layout plotting name, operator, capacity, and lat/long coordinates instantly
-        deck_map = pdk.Deck(
-            layers=[scatterplot_layer],
-            initial_view_state=viewport_state,
-            map_style="mapbox://styles/mapbox/light-v10",
-            tooltip={
-                "html": """
-                <div style='font-family: Helvetica, Arial, sans-serif; padding: 10px; background-color: #0f172a; color: white; border-radius: 6px; font-size: 0.9rem;'>
-                    <b>🏭 Plant:</b> {Plant Name}<br/>
-                    <b>🏢 Company:</b> {Company}<br/>
-                    <b>📊 Status:</b> {Status}<br/>
-                    <b>⚙️ Capacity:</b> {Capacity} M Liters/Yr<br/>
-                    <b>📍 Coordinates:</b> {lat}, {lon}
-                </div>
-                """,
-                "style": {"backgroundColor": "transparent", "color": "white", "zIndex": "10000"}
-            }
+        # 🟢 FIX: Plotly Express map layer. It renders locally inside the browser with colored statuses
+        # and interactive custom hover cards, completely bypassing all token-based white screen bugs.
+        fig_map = px.scatter_mapbox(
+            map_df,
+            lat="lat",
+            lon="lon",
+            color="Status",
+            size="Capacity",
+            size_max=35,
+            color_discrete_map={
+                "Operating": "#2ecc71",               # Symmetrical Emerald Green
+                "Closed": "#e74c3c",                  # Symmetrical Aligned Crimson Red
+                "Capacity Expanded (+15%)": "#f1c40f" # Symmetrical Amber Yellow
+            },
+            hover_name="Plant Name",
+            hover_data={"lat": False, "lon": False, "Status": True, "Capacity": False, "Hover Details": True},
+            zoom=4.2
         )
         
-        st.pydeck_chart(deck_map)
-        st.markdown("💡 *Spatial Mapping Legend: **Green Bubbles** = Verified Operating | **Yellow Bubbles** = Capacity Expanded/Planned | **Red Bubbles** = Closed (Hover over any bubble to inspect 33-attribute structural metadata).*")
+        # Configure layout to use zero-fail, open-source terrain styles
+        fig_map.update_layout(
+            mapbox_style="open-street-map",
+            margin=dict(r=0, t=0, l=0, b=0),
+            height=500,
+            showlegend=True
+        )
+        
+        st.plotly_chart(fig_map, use_container_width=True)
+        st.markdown("💡 *Spatial Mapping Legend: **Green Bubbles** = Verified Operating | **Yellow Bubbles** = Expansion/Planned | **Red Bubbles** = Closed (Circle size matches annual production volumes).*")
         
         st.markdown('<div class="section-title">Active Master Production Registry</div>', unsafe_allow_html=True)
         st.dataframe(map_df[["Plant Name", "Company", "Parent Group", "State", "Status", "Capacity", "Feedstock", "Verification Date"]], use_container_width=True)
@@ -256,7 +256,7 @@ elif page == "🔍 Automated Research & Extraction Hub":
         st.dataframe(pending_df[["Plant Name", "Company", "Source", "Confidence", "Status", "Capacity", "ExtractDate"]], use_container_width=True)
 
 # ==========================================
-# PAGE 4: HUMAN-IN-THE-LOOP (HITL) QUEUE (UPGRADED FUNCTIONAL INPUT FORM GRID)
+# PAGE 4: HUMAN-IN-THE-LOOP (HITL) QUEUE (FIXED SYMMETRICAL DATA INPUT FORM)
 # ==========================================
 elif page == "🖥️ Human-in-the-Loop Review Queue":
     render_executive_panel("Human-In-The-Loop Data Verification Interface", "100% Data Fidelity Verification Environment for Senior Corporate Leadership Validation")
@@ -268,7 +268,7 @@ elif page == "🖥️ Human-in-the-Loop Review Queue":
         current_target = st.session_state.pending_queue[0]
         st.warning(f"👉 **Awaiting Action:** Evaluating Extraction Target Record **1 of {len(st.session_state.pending_queue)}**: **{current_target['Plant Name']}** (AI Engine Match Confidence Scale: {current_target['Confidence']}%)")
         
-        left_pane, right_pane = st.columns([2, 3]) # Give slightly more width to the data-entry side
+        left_pane, right_pane = st.columns([2, 3])
         with left_pane:
             st.markdown('<div class="section-title">Original Source Text Fragment</div>', unsafe_allow_html=True)
             st.info(f"""
@@ -285,7 +285,7 @@ elif page == "🖥️ Human-in-the-Loop Review Queue":
         with right_pane:
             st.markdown('<div class="section-title">Verified Enterprise Data Field Form</div>', unsafe_allow_html=True)
             
-            # 🟢 FIX #2: Fully expanded data field grid tracking the 33-attribute layout intuitively
+            # 🟢 FIX: Form variables re-aligned with matching layout parameters to lock column symmetry completely
             with st.form("hitl_interactive_form"):
                 
                 st.markdown("##### 📋 Core Asset Profile & Identification")
