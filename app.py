@@ -40,26 +40,80 @@ st.sidebar.markdown("---")
 st.sidebar.info("**Project Scope Flags:**\n- Target Country: Brazil 🇧🇷\n- Window: 2003 - 2026\n- Target Metrics: 33 Attributes")
 
 # ==========================================
-# PAGE 1: HOME
+# PAGE 1: HOME (THE GLOW-UP UPGRADE)
 # ==========================================
 if page == "🏠 Home / Workflow Overview":
-    st.title("GE Global Ethanol Production Intelligence Prototype")
-    st.subheader("AI-Augmented Data Extraction & Lifecycle Maintenance Pipeline")
+    # Executive Top Banner Layout
+    st.title("⚡ Global Ethanol Production Intelligence Hub")
+    st.subheader("Automated Asset Discovery, HITL Verification & Maintenance Framework")
+    st.markdown("---")
     
-    st.markdown("""
-    This prototype demonstrates an automated pipeline for collecting and verifying **33 distinct data points** across global ethanol production assets.
-    
-    ### Core Operations:
-    * **Automated Scouting:** Machine learning pipelines scan company sites, regulatory data, and news reports.
-    * **Human-in-the-Loop (HITL):** Analysts cross-verify automated text extraction blocks against raw URLs to guarantee 100% precision.
-    * **Lifecycle Tracking:** Active system alerts flag production shifts, expansion updates, and asset closures across a 3-year timeline.
-    """)
-    
+    # 🌟 NEW VISUAL FIX: High-Impact Operations Dashboard Cards
+    st.markdown("### 📊 Operational Queue Health Status")
     col1, col2, col3, col4 = st.columns(4)
-    col1.metric("Total Brazil Plants Located", len(df))
-    col2.metric("Pending Analyst Review", "2 Plants")
-    col3.metric("Verified Data Assets", "3 Plants")
-    col4.metric("Active Maintenance Alerts", "1 Alert Flag")
+    with col1:
+        st.info("📂 **Total Located Assets**\n## 5 Plants")
+        st.caption("Active Phase 1 Scope: Brazil")
+    with col2:
+        st.warning("⏳ **Pending Review**\n## 2 Plants")
+        st.caption("Awaiting Analyst Validation")
+    with col3:
+        st.success("✅ **Verified Assets**\n## 3 Plants")
+        st.caption("100% Precise Match Profile")
+    with col4:
+        st.error("🚨 **Active Lifecycle Alerts**\n## 1 Alert")
+        st.caption("Capacity Shift Flag Triggered")
+
+    st.markdown("---")
+    
+    # Split Layout for Core Workflow & Data Visualization Tracking
+    col_left, col_right = st.columns([3, 2])
+    
+    with col_left:
+        st.markdown("### ⚙️ Pipeline Integration Blueprint")
+        
+        with st.container(border=True):
+            st.markdown("#### 🤖 1. Automated Machine Learning Discovery")
+            st.write("Background scraping protocols monitor public enterprise directories, regulatory updates, and global news indices to flag newly commissioned, planned, or updating ethanol facilities.")
+            
+        with st.container(border=True):
+            st.markdown("#### 🖥️ 2. Human-In-The-Loop (HITL) Verification")
+            st.write("To satisfy absolute correctness constraints, analysts evaluate auto-extracted entity attributes against real-time side-by-side original documentation snippets before committing logs to production.")
+            
+        with st.container(border=True):
+            st.markdown("#### 🔔 3. 3-Year Strategic Continuous Maintenance")
+            st.write("Automated delta-checks process spatial and quantitative variations (decommissioning events, facility growth adjustments) to issue urgent analyst dashboard warnings.")
+
+    with col_right:
+        st.markdown("### 🗺️ Project Execution Roadmap")
+        
+        # 🌟 NEW VISUAL FIX: Interactive Phase Chart demonstrating immediate deployment vs expansion targets
+        roadmap_data = pd.DataFrame({
+            "Market Horizon Target": ["Phase 1: Brazil (Months 1-2)", "Phase 2: United States", "Phase 3: EU & Asian Markets"],
+            "Target Asset Target Coverage (%)": [100, 0, 0],
+            "Operational Focus Status": ["Active Alpha Build", "Pipeline Backlog", "Pipeline Backlog"]
+        })
+        
+        fig = px.bar(
+            roadmap_data, 
+            y="Market Horizon Target", 
+            x="Target Asset Target Coverage (%)", 
+            color="Operational Focus Status",
+            orientation="h",
+            color_discrete_map={"Active Alpha Build": "#2ecc71", "Pipeline Backlog": "#7f8c8d"},
+            title="Deployment Velocity Timeline Track"
+        )
+        fig.update_layout(xaxis_maxrange=[0, 100], height=280, showlegend=False)
+        st.plotly_chart(fig, use_container_width=True)
+        
+        st.markdown("### 📋 33 Metric Verification Coverage")
+        with st.expander("🔍 View Required Data Category Partitions"):
+            st.markdown("""
+            * **Asset Identity:** Name, Operating Owner, Parent Entity, Status
+            * **Geographic Profile:** Lat, Long Coordinates (Google Maps verification)
+            * **Capacity Matrix:** Nameplate, Engineering Design, Normalized Scale Capacity
+            * **Feedstocks:** Input Mix Breakdown, Byproduct Yield Profile, Efficiency Coefficients
+            """)
 
 # ==========================================
 # PAGE 2: GEOSPATIAL INTELLIGENCE MAP
@@ -68,13 +122,12 @@ elif page == "🗺️ Geospatial Intelligence Map":
     st.title("🗺️ Geospatial Intelligence Map")
     st.subheader("Phase 1 Production Target Tracking: Brazil Clusters")
     
-    # 🔴 UPGRADE 1: Dynamic radius sizing matching industry capacity volumes
     df['radius'] = df['Capacity'] * 200  
     
     def get_color(status):
-        if status == "Operating": return [46, 204, 113, 200] # Mint Green
-        elif status == "Closed": return [231, 76, 60, 200] # Crimson Red
-        else: return [241, 196, 15, 200] # Amber Warning
+        if status == "Operating": return [46, 204, 113, 200]
+        elif status == "Closed": return [231, 76, 60, 200]
+        else: return [241, 196, 15, 200]
         
     df['color'] = df['Status'].apply(get_color)
     
@@ -83,7 +136,7 @@ elif page == "🗺️ Geospatial Intelligence Map":
         df,
         get_position=["Lon", "Lat"],
         get_color="color",
-        get_radius="radius",  # Dynamically bound radius attribute
+        get_radius="radius",
         pickable=True,
     )
     
@@ -133,7 +186,6 @@ elif page == "🖥️ Human-in-the-Loop Review Queue":
         """)
         st.caption("Source URL Match: https://www.bloomberg.com/news/articles/brazil-biofuel-expansion-raizen")
         
-        # 🔴 UPGRADE 3: Formalizing Engineering Metric Conversion Logic via LaTeX 
         st.markdown("### 🧮 Methodology Standards Engine")
         st.info("Dynamic calibration applied per standard operating procedure rules:")
         st.latex(r"Capacity_{Effective} = Capacity_{Design} \times \text{Energy Density Scale Factor}")
@@ -142,7 +194,6 @@ elif page == "🖥️ Human-in-the-Loop Review Queue":
         st.subheader("📝 AI-Extracted Framework (33 Attributes)")
         
         with st.form("hitl_form"):
-            # 🔴 UPGRADE 2: Grouping the 33 attributes into clean executive accordions
             with st.accordion("📋 Section A: Asset Identification Profile", expanded=True):
                 p_name = st.text_input("Project Name (Attribute #1)", value="Unid. Gasa")
                 p_comp = st.text_input("Operating Company (Attribute #2)", value="Raízen")
@@ -165,15 +216,11 @@ elif page == "🖥️ Human-in-the-Loop Review Queue":
                 st.balloons()
                 st.success("Asset Data Verified Successfully! Logged to Client Template Sheet.")
 
-    # 🔴 UPGRADE 4: Direct Export Button with strict client-requested template file naming structure
     st.markdown("---")
     st.subheader("📥 Export Finalized Verification Delivery Documents")
     
-    # Generate timestamp for file format
     timestamp_str = datetime.now().strftime("%Y%m%d_%H%M")
     export_filename = f"Brazil_{len(df)}_Projects_{timestamp_str}_FinalReport.csv"
-    
-    # Clean export data conversion
     csv_data = df[["Plant Name", "Company", "Parent Group", "State", "Status", "Capacity", "Feedstock"]].to_csv(index=False)
     
     st.download_button(
