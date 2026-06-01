@@ -1,100 +1,174 @@
 import streamlit as st
 import pandas as pd
+import numpy as np
 import plotly.express as px
+import pydeck as pdk
+from datetime import datetime
 
-# --- 1. MOCK DATA GENERATOR ---
-# In a real app, this would load from your verified database/CSV
+# Set up browser tab title and wide executive layout
+st.set_page_config(page_title="GE Global Ethanol Intelligence Dashboard", layout="wide")
+
+# --- MOCK DATA GENERATION (Brazil Focus for Phase 1) ---
+@st.cache_data
 def load_mock_data():
-    data = [
-        {"Plant Name": "Raízen Costa Pinto", "State": "SP", "Lat": -22.70, "Long": -47.64, "Status": "Active", "Capacity": 600000, "Year": 2003},
-        {"Plant Name": "FS Bioenergia Lucas", "State": "MT", "Lat": -13.06, "Long": -55.91, "Status": "Active", "Capacity": 530000, "Year": 2017},
-        {"Plant Name": "São Martinho Usina", "State": "SP", "Lat": -21.31, "Long": -48.11, "Status": "Active", "Capacity": 700000, "Year": 2005},
-        {"Plant Name": "Inpasa Sinop", "State": "MT", "Lat": -11.85, "Long": -55.50, "Status": "Active", "Capacity": 800000, "Year": 2019},
-        {"Plant Name": "Arezzo Ethanol Project", "State": "GO", "Lat": -17.92, "Long": -51.72, "Status": "Under Construction", "Capacity": 300000, "Year": 2024},
-        {"Plant Name": "Neomille Maracaju", "State": "MS", "Lat": -21.61, "Long": -55.16, "Status": "Planned", "Capacity": 450000, "Year": 2025},
-        {"Plant Name": "Cerradinho Bio", "State": "GO", "Lat": -17.88, "Long": -51.71, "Status": "Active", "Capacity": 400000, "Year": 2011},
-        {"Plant Name": "Albioma Solar-Eth", "State": "MT", "Lat": -15.60, "Long": -56.09, "Status": "Planned", "Capacity": 200000, "Year": 2026},
+    plants = [
+        {"Plant Name": "Unid. Barra", "Company": "Raízen", "Parent Group": "Cosan & Shell", "State": "São Paulo", "City": "Barra Bonita", "Lat": -22.4042, "Lon": -48.5564, "Status": "Operating", "Capacity": 180, "Feedstock": "Sugarcane Bagasse", "Start Year": 2004},
+        {"Plant Name": "Unid. Maracaí", "Company": "Raízen", "Parent Group": "Cosan & Shell", "State": "São Paulo", "City": "Maracaí", "Lat": -22.6124, "Lon": -50.6345, "Status": "Operating", "Capacity": 120, "Feedstock": "Sugarcane Bagasse", "Start Year": 2008},
+        {"Plant Name": "Unid. Gasa", "Company": "Raízen", "Parent Group": "Cosan & Shell", "State": "São Paulo", "City": "Andradina", "Lat": -20.8961, "Lon": -51.3794, "Status": "Capacity Expanded (+15%)", "Capacity": 95, "Feedstock": "Sugarcane Bagasse", "Start Year": 2003},
+        {"Plant Name": "Sinop Biofuel Plant", "Company": "Inpasa", "Parent Group": "Inpasa Brasil", "State": "Mato Grosso", "City": "Sinop", "Lat": -11.8541, "Lon": -55.5085, "Status": "Planned/Under Construction", "Capacity": 400, "Feedstock": "Corn", "Start Year": 2026},
+        {"Plant Name": "Boa Vista Biorefinery", "Company": "São Martinho", "Parent Group": "São Martinho Group", "State": "Goiás", "City": "Quirinópolis", "Lat": -18.4483, "Lon": -50.4514, "Status": "Closed", "Capacity": 50, "Feedstock": "Sugarcane Bagasse", "Start Year": 2012}
     ]
-    return pd.DataFrame(data)
+    return pd.DataFrame(plants)
 
-# --- 2. PAGE CONFIG ---
-st.set_page_config(layout="wide", page_title="Brazil Ethanol Map 2003-2026")
-
-st.title("🌎 Global Ethanol Tracker: Brazil Dashboard")
-st.markdown("### Visualization of Active, Planned, and Under Construction Plants (2003 - 2026)")
-
-# --- 3. SIDEBAR FILTERS ---
-st.sidebar.header("Filter Options")
-
-# Year Slider
-year_range = st.sidebar.slider(
-    "Select Operational Year Range",
-    min_value=2003,
-    max_value=2026,
-    value=(2003, 2026)
-)
-
-# Status Filter
-status_options = ["Active", "Planned", "Under Construction"]
-selected_status = st.sidebar.multiselect("Plant Status", status_options, default=status_options)
-
-# Load and Filter Data
 df = load_mock_data()
-filtered_df = df[
-    (df['Year'] >= year_range[0]) & 
-    (df['Year'] <= year_range[1]) & 
-    (df['Status'].isin(selected_status))
-]
 
-# --- 4. KPI METRICS ---
-col1, col2, col3, col4 = st.columns(4)
-col1.metric("Total Plants", len(filtered_df))
-col2.metric("Total Capacity (m3/y)", f"{filtered_df['Capacity'].sum():,}")
-col3.metric("Active Plants", len(filtered_df[filtered_df['Status'] == 'Active']))
-col4.metric("Pipeline (Planned/UC)", len(filtered_df[filtered_df['Status'] != 'Active']))
-
-# --- 5. MAP VISUALIZATION (PLOTLY) ---
-st.subheader("Interactive Plant Geography")
-
-if not filtered_df.empty:
-    fig = px.scatter_mapbox(
-        filtered_df,
-        lat="Lat",
-        lon="Long",
-        size="Capacity",
-        color="Status",
-        hover_name="Plant Name",
-        hover_data={"Lat": False, "Long": False, "Capacity": True, "Year": True},
-        color_discrete_map={
-            "Active": "#2ecc71",            # Green
-            "Under Construction": "#f1c40f", # Yellow
-            "Planned": "#e67e22"             # Orange
-        },
-        zoom=3.5,
-        height=600,
-        center={"lat": -15.79, "lon": -47.88} # Focused on Brazil
-    )
-
-    # Styling the Map
-    fig.update_layout(
-        mapbox_style="carto-darkmatter", # High-contrast professional look
-        margin={"r":0,"t":0,"l":0,"b":0},
-        legend=dict(yanchor="top", y=0.99, xanchor="left", x=0.01)
-    )
-
-    st.plotly_chart(fig, use_container_width=True)
-else:
-    st.warning("No plants match the selected filters.")
-
-# --- 6. DATA TABLE ---
-st.subheader("Verified Plant Details")
-st.dataframe(filtered_df.sort_values(by="Year", ascending=False), use_container_width=True)
-
-# --- 7. EXPORT BUTTON ---
-csv = filtered_df.to_csv(index=False).encode('utf-8')
-st.download_button(
-    label="📂 Export Filtered Data to Template",
-    data=csv,
-    file_name="brazil_ethanol_tracker.csv",
-    mime="text/csv",
+# --- SIDEBAR NAVIGATION PANEL ---
+st.sidebar.title("🧭 Navigation Hub")
+st.sidebar.markdown("---")
+page = st.sidebar.radio(
+    "Go To Module:",
+    [
+        "🏠 Home / Workflow Overview",
+        "🗺️ Geospatial Intelligence Map",
+        "🔍 Automated Research & Extraction Hub",
+        "🖥️ Human-in-the-Loop Review Queue",
+        "🔔 Maintenance Alerts & Lifecycle"
+    ]
 )
+
+st.sidebar.markdown("---")
+st.sidebar.info("**Project Scope Flags:**\n- Target Country: Brazil 🇧🇷\n- Window: 2003 - 2026\n- Target Metrics: 33 Attributes")
+
+# ==========================================
+# PAGE 1: HOME
+# ==========================================
+if page == "🏠 Home / Workflow Overview":
+    st.title("GE Global Ethanol Production Intelligence Prototype")
+    st.subheader("AI-Augmented Data Extraction & Lifecycle Maintenance Pipeline")
+    
+    st.markdown("""
+    This prototype demonstrates an automated pipeline for collecting and verifying **33 distinct data points** across global ethanol production assets.
+    
+    ### Core Operations:
+    * **Automated Scouting:** Machine learning pipelines scan company sites, regulatory data, and news reports.
+    * **Human-in-the-Loop (HITL):** Analysts cross-verify automated text extraction blocks against raw URLs to guarantee 100% precision.
+    * **Lifecycle Tracking:** Active system alerts flag production shifts, expansion updates, and asset closures across a 3-year timeline.
+    """)
+    
+    # Simple summary metric cards
+    col1, col2, col3, col4 = st.columns(4)
+    col1.metric("Total Brazil Plants Located", len(df))
+    col2.metric("Pending Analyst Review", "2 Plants")
+    col3.metric("Verified Data Assets", "3 Plants")
+    col4.metric("Active Maintenance Alerts", "1 Alert Flag")
+
+# ==========================================
+# PAGE 2: GEOSPATIAL INTELLIGENCE MAP
+# ==========================================
+elif page == "🗺️ Geospatial Intelligence Map":
+    st.title("🗺️ Geospatial Intelligence Map")
+    st.subheader("Phase 1 Production Target Tracking: Brazil Clusters")
+    
+    # Setup color mapping based on status
+    def get_color(status):
+        if status == "Operating": return [46, 204, 113, 200] # Mint Green
+        elif status == "Closed": return [231, 76, 60, 200] # Crimson Red
+        else: return [241, 196, 15, 200] # Amber Warning
+        
+    df['color'] = df['Status'].apply(get_color)
+    
+    # Pydeck Visual Map Widget
+    layer = pdk.Layer(
+        "ScatterplotLayer",
+        df,
+        get_position=["Lon", "Lat"],
+        get_color="color",
+        get_radius=50000, # Circle size on map
+        pickable=True,
+    )
+    
+    view_state = pdk.ViewState(latitude=-18.0, longitude=-48.0, zoom=4, pitch=0)
+    
+    r = pdk.Deck(layers=[layer], initial_view_state=view_state, tooltip={"text": "{Plant Name}\nCompany: {Company}\nStatus: {Status}\nCapacity: {Capacity}M Liters/Yr"})
+    st.pydeck_chart(r)
+    
+    st.markdown("💡 *Map Legend: **Green** = Operational | **Yellow** = Planned/Under Construction | **Red** = Closed/Decommissioned*")
+    st.dataframe(df[["Plant Name", "Company", "State", "Status", "Capacity", "Feedstock"]])
+
+# ==========================================
+# PAGE 3: AUTOMATED RESEARCH HUB
+# ==========================================
+elif page == "🔍 Automated Research & Extraction Hub":
+    st.title("🔍 Automated Research & Extraction Hub")
+    
+    country_sel = st.selectbox("Select Target Deployment Market Region:", ["Brazil", "India", "United States"])
+    
+    if st.button("Trigger Automated AI Web Scraper Engine"):
+        with st.spinner("Scouting company portals, regional news indices, and government registries..."):
+            st.success(f"AI Search Complete for {country_sel}! Populating Extraction Queue below.")
+            
+    st.markdown("### Staged Raw Source Data Available for Parsing:")
+    st.code("""
+    [Source Index Match ID #81023]
+    URL: https://www.bloomberg.com/news/articles/brazil-biofuel-expansion-raizen
+    Text Segment Saved: 'Raízen Group executing capacity build-out at Andradina cluster, targeting a structured output expansion adjustment...'
+    Confidence Score: 94.2%
+    """)
+
+# ==========================================
+# PAGE 4: HUMAN-IN-THE-LOOP (HITL) QUEUE
+# ==========================================
+elif page == "🖥️ Human-in-the-Loop Review Queue":
+    st.title("🖥️ Analyst Split-Screen Verification Queue")
+    st.subheader("Human-In-The-Loop (HITL) 100% Precision Data Verification Layout")
+    
+    left_pane, right_pane = st.columns(2)
+    
+    with left_pane:
+        st.subheader("📄 Raw Text Source Documents")
+        st.info("""
+        **Document Excerpt from Bloomberg Industrial Index:**
+        
+        "Raízen's Gasa facility near Andradina, São Paulo, has logged structural optimizations. The company website confirms an adjustment to the original design layout, expanding baseline capacity by roughly 15% to hit an effective production capability of 95 Million Liters per year..."
+        """)
+        st.caption("Source URL Match: https://www.bloomberg.com/news/articles/brazil-biofuel-expansion-raizen")
+        
+    with right_pane:
+        st.subheader("📝 AI-Extracted Framework (33 Attributes)")
+        
+        with st.form("hitl_form"):
+            p_name = st.text_input("Project Name (Attribute #1)", value="Unid. Gasa")
+            p_comp = st.text_input("Operating Company (Attribute #2)", value="Raízen")
+            p_status = st.selectbox("Operational Status (Attribute #11)", ["Operating", "Planned", "Capacity Expanded (+15%)", "Closed"], index=2)
+            p_cap = st.number_input("Effective Annual Capacity in M Liters/Yr (Attribute #15)", value=95)
+            p_feed = st.text_input("Feedstock Raw Material (Attribute #22)", value="Sugarcane Bagasse")
+            
+            st.markdown("*Calculation Factor Mapping Rule applied: Standard Energy Density Ratio (Conversion SOP Note v1.2)*")
+            
+            submit = st.form_submit_button("Verify & Push to Production Database")
+            if submit:
+                st.balloons()
+                st.success("Asset Data Verified Successfully! Logged to Client Template Sheet.")
+
+# ==========================================
+# PAGE 5: MAINTENANCE & LIFECYCLE ALERTS
+# ==========================================
+elif page == "🔔 Maintenance Alerts & Lifecycle":
+    st.title("🔔 Asset Lifecycle Maintenance Engine")
+    st.subheader("Dynamic Delta Notifications & Status Alarm Rules")
+    
+    st.markdown("The maintenance script evaluates live web sources to map operational changes against historical asset profiles.")
+    
+    # Display a simulated high-alert container row
+    st.warning("""
+    ⚠️ **System Delta Warning Flag Alert (ID: #AL-90182)**
+    * **Asset:** Unid. Gasa Plant (Operating Company: Raízen)
+    * **Trigger Condition Detect Event:** 15% Capacity change detected via newly published Corporate Sustainability Report.
+    * **Action Required:** Analyst validation review missing in verified production schema.
+    """)
+    
+    col_a, col_b = st.columns(2)
+    if col_a.button("Open Operational Override Verification Window"):
+        st.info("Routing process to HITL Screen...")
+    if col_b.button("Dismiss System Status Warning Flag"):
+        st.success("Alert dismissed.")
