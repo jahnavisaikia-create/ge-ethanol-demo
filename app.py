@@ -103,7 +103,7 @@ if page == "🏠 Home / Workflow Overview":
             color_discrete_map={"Active Alpha Build": "#2ecc71", "Pipeline Backlog": "#7f8c8d"},
             title="Deployment Velocity Timeline Track"
         )
-        fig.update_layout(xaxis_maxrange=[0, 100], height=280, showlegend=False)
+        fig.update_layout(xaxis_range=[0, 100], height=280, showlegend=False)
         st.plotly_chart(fig, use_container_width=True)
         
         st.markdown("### 📋 33 Metric Verification Coverage")
