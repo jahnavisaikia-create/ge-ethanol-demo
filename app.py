@@ -40,7 +40,7 @@ st.markdown("""
         box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05);
     }
     .ge-system-tag { color: #38bdf8; font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.75rem; }
-    .ge-main-title { font-size: 2.25rem; font-weight: 800; color: #ffffff; margin-bottom: 1.25rem; letter-spacing: -0.02em; line-height: 1.2; }
+    .ge-main-title { font-size: 2.25rem; font-weight: 800; color: #ffffff; margin-bottom: 125rem; letter-spacing: -0.02em; line-height: 1.2; }
     .ge-description { font-size: 1rem; color: #cbd5e1; line-height: 1.6; text-align: justify; }
     
     .ge-product-info-card {
@@ -105,7 +105,31 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# --- SIDEBAR COMPONENT LINK HUB ---
+# --- REUSABLE PATTERN: BRANDED INDUSTRIAL BANNER ENGINE ---
+# Placed globally at top context tier to eliminate all NameError gaps
+def render_ge_panel(title, subtitle):
+    st.markdown(f"""
+    <div class="ge-header-banner">
+        <div class="ge-title">{title}</div>
+        <div class="ge-subtitle">{subtitle}</div>
+    </div>
+    """, unsafe_allow_html=True)
+
+# --- GLOBAL DATABASE MEMORY INITIALIZATION ---
+if "production_db" not in st.session_state:
+    st.session_state.production_db = pd.DataFrame([
+        {"Plant Name": "Unid. Barra", "Company": "Raízen", "Parent Group": "Cosan & Shell", "State": "São Paulo", "City": "Barra Bonita", "lat": -22.4042, "lon": -48.5564, "Status": "Operating", "Capacity": 180, "Feedstock": "Sugarcane Bagasse", "Start Year": 2004, "Verification Date": "2026-05-15"},
+        {"Plant Name": "Unid. Maracaí", "Company": "Raízen", "Parent Group": "Cosan & Shell", "State": "São Paulo", "City": "Maracaí", "lat": -22.6124, "lon": -50.6345, "Status": "Operating", "Capacity": 120, "Feedstock": "Sugarcane Bagasse", "Start Year": 2008, "Verification Date": "2026-05-20"},
+        {"Plant Name": "Passo Fundo Cereal Plant", "Company": "Be8", "Parent Group": "ECB Group", "State": "Rio Grande do Sul", "City": "Passo Fundo", "lat": -28.2624, "lon": -52.4068, "Status": "Operating", "Capacity": 210, "Feedstock": "Corn", "Start Year": 2011, "Verification Date": "2026-05-25"}
+    ])
+
+if "pending_queue" not in st.session_state:
+    st.session_state.pending_queue = [
+        {"Plant Name": "Unid. Gasa", "Company": "Raízen", "Parent Group": "Cosan & Shell", "State": "São Paulo", "City": "Andradina", "lat": -20.8961, "lon": -51.3794, "Status": "Capacity Expanded (+15%)", "Capacity": 95, "Feedstock": "Sugarcane Bagasse", "Start Year": 2003, "Confidence": 94.2, "Source": "Bloomberg Industrial Index", "ExtractDate": "2026-06-01"},
+        {"Plant Name": "Sinop Biofuel Plant", "Company": "Inpasa", "Parent Group": "Inpasa Brasil", "State": "Mato Grosso", "City": "Sinop", "lat": -11.8541, "lon": -55.5085, "Status": "Planned/Under Construction", "Capacity": 400, "Feedstock": "Corn", "Start Year": 2026, "Confidence": 89.7, "Source": "Mato Grosso Regional Registry", "ExtractDate": "2026-06-01"}
+    ]
+
+# --- SIDEBAR NAVIGATION CONTROLS ---
 st.sidebar.title("🧭 GEA Command Hub")
 st.sidebar.caption("Enterprise Layout Mode Active")
 st.sidebar.markdown("---")
@@ -117,7 +141,6 @@ view_page = st.sidebar.radio(
         "🏠 Screen 30: Operations Management Hub"
     ]
 )
-
 st.sidebar.markdown("---")
 st.sidebar.info("Authenticated Identity: Analyst Sneha")
 
@@ -127,9 +150,7 @@ st.sidebar.info("Authenticated Identity: Analyst Sneha")
 if view_page == "🔐 Screen 28 & 29: Premium Login Interface":
     st.markdown('<div style="padding-top:1.5rem;"></div>', unsafe_allow_html=True)
     
-    # Perfectly symmetrical 50/50 split layout grid
     col_left, col_right = st.columns([1, 1], gap="large")
-    
     with col_left:
         st.markdown("""
         <div class="ge-brand-hero-card">
@@ -151,7 +172,7 @@ if view_page == "🔐 Screen 28 & 29: Premium Login Interface":
             st.markdown("<div style='padding-top:1.5rem;'></div>", unsafe_allow_html=True)
             submit_auth = st.form_submit_button("Sign in", use_container_width=True)
             if submit_auth:
-                st.success("Authentication mockup successful! Navigate to Screen 30 using the sidebar controls.")
+                st.success("Authentication mockup successful! Toggle to Screen 30 via the sidebar navigation menu.")
 
 # ==========================================
 # VIEW MODULE: SCREEN 30 (COMMAND WORKSPACE HUB)
@@ -160,7 +181,7 @@ else:
     render_ge_panel("GEA Navigator: Operations Command Hub", "Target Scope Framework: Brazil Country Filters (Temporal Scope Window: 2003 - 2026)")
     st.markdown("<p style='font-size:1rem; color:#475569; margin-top:-1rem; margin-bottom:2rem;'>Select a country scope, start research, and review extracted projects before generating a report.</p>", unsafe_allow_html=True)
     
-    # Structural Control Deck (Replaces loose inputs from image 30)
+    # Structural Control Deck Container
     st.markdown('<div class="ge-control-deck-container">', unsafe_allow_html=True)
     col_inputs, col_actions = st.columns([3, 2], gap="large")
     with col_inputs:
@@ -200,16 +221,4 @@ else:
         st.markdown("""
         <div class="ge-scope-box">
             <span style='font-size:0.8rem; font-weight:600; color:#64748b; text-transform:uppercase; letter-spacing:0.05em;'>Active Country Scope Parameter</span>
-            <span style='font-size:1.1rem; color:#0284c7; font-weight:700; margin-top:2px;'>Brazil 🇧🇷</span>
-        </div>
-        """, unsafe_allow_html=True)
-        
-    # Drilldowns Accordion Container Panel
-    st.markdown('<div class="ge-workspace-header-title">Company Metric Drilldowns</div>', unsafe_allow_html=True)
-    with st.expander("Be8 | Brazil | 1 project(s) | 1 pending review metric logs", expanded=True):
-        st.markdown("<div style='padding:0.25rem 0;'></div>", unsafe_allow_html=True)
-        d_col1, d_col2 = st.columns([3, 1], gap="medium")
-        with d_col1:
-            st.button("Be8 Passo Fundo Cereal Ethanol Plant Asset Log", use_container_width=True)
-        with d_col2:
-            st.markdown("<div style='margin-top: 6px; font-size:1rem; color:#d97706; font-weight:600; text-align:center;'>⏳ Awaiting Audit Check</div>", unsafe_allow_html=True)
+            <span
