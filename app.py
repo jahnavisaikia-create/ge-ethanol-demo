@@ -188,4 +188,48 @@ else:
         st.multiselect("Country", ["Brazil", "United States", "India"], default=["Brazil"])
     with col_actions:
         st.markdown("<p style='font-size:1.05rem; font-weight:700; color:#0f172a; margin-bottom:0.75rem; letter-spacing:-0.01em;'>Action</p>", unsafe_allow_html=True)
-        st.button("Start Research
+        st.button("Start Research", use_container_width=True, type="primary")
+    st.markdown('</div>', unsafe_allow_html=True)
+    
+    # Balanced KPI Analytics Grid
+    col_kpi1, col_kpi2, col_kpi3 = st.columns(3)
+    with col_kpi1:
+        st.markdown("""<div class="ge-kpi-container-card"><div class="ge-kpi-label">Countries in Scope</div><div class="ge-kpi-value">1</div></div>""", unsafe_allow_html=True)
+    with col_kpi2:
+        st.markdown("""<div class="ge-kpi-container-card"><div class="ge-kpi-label">Projects Discovered</div><div class="ge-kpi-value">5</div></div>""", unsafe_allow_html=True)
+    with col_kpi3:
+        st.markdown("""<div class="ge-kpi-container-card"><div class="ge-kpi-label">Pending Review Queue</div><div class="ge-kpi-value">5</div></div>""", unsafe_allow_html=True)
+        
+    # Table Matrix Area
+    st.markdown('<div class="ge-workspace-header-title">Research Summary Matrix</div>', unsafe_allow_html=True)
+    mock_summary_data = pd.DataFrame({
+        "Country Target": ["Brazil", "Brazil", "Brazil", "Brazil"],
+        "Operating Company Owner": ["Be8", "CB Bioenergia", "FS Indústria de Etanol S.A.", "Raízen"],
+        "# Discovered Projects": [1, 1, 2, 1],
+        "# Review Pending Flags": [1, 1, 2, 1]
+    })
+    st.dataframe(mock_summary_data, use_container_width=True, hide_index=True)
+    
+    # Aligned Operations Footer Elements
+    st.markdown("<br>", unsafe_allow_html=True)
+    col_rep, col_scp = st.columns([3, 2], gap="large")
+    with col_rep:
+        st.markdown("<div style='margin-top: 6px;'></div>", unsafe_allow_html=True)
+        st.button("Generate Template Report Output", use_container_width=True)
+    with col_scp:
+        st.markdown("""
+        <div class="ge-scope-box">
+            <span style='font-size:0.8rem; font-weight:600; color:#64748b; text-transform:uppercase; letter-spacing:0.05em;'>Active Country Scope Parameter</span>
+            <span style='font-size:1.1rem; color:#0284c7; font-weight:700; margin-top:2px;'>Brazil 🇧🇷</span>
+        </div>
+        """, unsafe_allow_html=True)
+        
+    # Drilldowns Accordion Container Panel
+    st.markdown('<div class="ge-workspace-header-title">Company Metric Drilldowns</div>', unsafe_allow_html=True)
+    with st.expander("Be8 | Brazil | 1 project(s) | 1 pending review metric logs", expanded=True):
+        st.markdown("<div style='padding:0.25rem 0;'></div>", unsafe_allow_html=True)
+        d_col1, d_col2 = st.columns([3, 1], gap="medium")
+        with d_col1:
+            st.button("Be8 Passo Fundo Cereal Ethanol Plant Asset Log", use_container_width=True)
+        with d_col2:
+            st.markdown("<div style='margin-top: 6px; font-size:1rem; color:#d97706; font-weight:600; text-align:center;'>⏳ Awaiting Audit Check</div>", unsafe_allow_html=True)
