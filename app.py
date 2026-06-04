@@ -40,7 +40,7 @@ st.markdown("""
         box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05);
     }
     .ge-system-tag { color: #38bdf8; font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.75rem; }
-    .ge-main-title { font-size: 2.25rem; font-weight: 800; color: #ffffff; margin-bottom: 125rem; letter-spacing: -0.02em; line-height: 1.2; }
+    .ge-main-title { font-size: 2.25rem; font-weight: 800; color: #ffffff; margin-bottom: 1.25rem; letter-spacing: -0.02em; line-height: 1.2; }
     .ge-description { font-size: 1rem; color: #cbd5e1; line-height: 1.6; text-align: justify; }
     
     .ge-product-info-card {
@@ -105,8 +105,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# --- REUSABLE PATTERN: BRANDED INDUSTRIAL BANNER ENGINE ---
-# Placed globally at top context tier to eliminate all NameError gaps
+# --- GLOBAL PATTERN: RENDER EXECUTIVE BANNER PANEL ---
 def render_ge_panel(title, subtitle):
     st.markdown(f"""
     <div class="ge-header-banner">
@@ -129,7 +128,7 @@ if "pending_queue" not in st.session_state:
         {"Plant Name": "Sinop Biofuel Plant", "Company": "Inpasa", "Parent Group": "Inpasa Brasil", "State": "Mato Grosso", "City": "Sinop", "lat": -11.8541, "lon": -55.5085, "Status": "Planned/Under Construction", "Capacity": 400, "Feedstock": "Corn", "Start Year": 2026, "Confidence": 89.7, "Source": "Mato Grosso Regional Registry", "ExtractDate": "2026-06-01"}
     ]
 
-# --- SIDEBAR NAVIGATION CONTROLS ---
+# --- SIDEBAR NAVIGATION ---
 st.sidebar.title("🧭 GEA Command Hub")
 st.sidebar.caption("Enterprise Layout Mode Active")
 st.sidebar.markdown("---")
@@ -189,36 +188,4 @@ else:
         st.multiselect("Country", ["Brazil", "United States", "India"], default=["Brazil"])
     with col_actions:
         st.markdown("<p style='font-size:1.05rem; font-weight:700; color:#0f172a; margin-bottom:0.75rem; letter-spacing:-0.01em;'>Action</p>", unsafe_allow_html=True)
-        st.button("Start Research", use_container_width=True, type="primary")
-    st.markdown('</div>', unsafe_allow_html=True)
-    
-    # Balanced KPI Analytics Grid
-    col_kpi1, col_kpi2, col_kpi3 = st.columns(3)
-    with col_kpi1:
-        st.markdown("""<div class="ge-kpi-container-card"><div class="ge-kpi-label">Countries in Scope</div><div class="ge-kpi-value">1</div></div>""", unsafe_allow_html=True)
-    with col_kpi2:
-        st.markdown("""<div class="ge-kpi-container-card"><div class="ge-kpi-label">Projects Discovered</div><div class="ge-kpi-value">5</div></div>""", unsafe_allow_html=True)
-    with col_kpi3:
-        st.markdown("""<div class="ge-kpi-container-card"><div class="ge-kpi-label">Pending Review Queue</div><div class="ge-kpi-value">5</div></div>""", unsafe_allow_html=True)
-        
-    # Table Matrix Area
-    st.markdown('<div class="ge-workspace-header-title">Research Summary Matrix</div>', unsafe_allow_html=True)
-    mock_summary_data = pd.DataFrame({
-        "Country Target": ["Brazil", "Brazil", "Brazil", "Brazil"],
-        "Operating Company Owner": ["Be8", "CB Bioenergia", "FS Indústria de Etanol S.A.", "Raízen"],
-        "# Discovered Projects": [1, 1, 2, 1],
-        "# Review Pending Flags": [1, 1, 2, 1]
-    })
-    st.dataframe(mock_summary_data, use_container_width=True, hide_index=True)
-    
-    # Aligned Operations Footer Elements
-    st.markdown("<br>", unsafe_allow_html=True)
-    col_rep, col_scp = st.columns([3, 2], gap="large")
-    with col_rep:
-        st.markdown("<div style='margin-top: 6px;'></div>", unsafe_allow_html=True)
-        st.button("Generate Template Report Output", use_container_width=True)
-    with col_scp:
-        st.markdown("""
-        <div class="ge-scope-box">
-            <span style='font-size:0.8rem; font-weight:600; color:#64748b; text-transform:uppercase; letter-spacing:0.05em;'>Active Country Scope Parameter</span>
-            <span
+        st.button("Start Research
